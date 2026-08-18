@@ -3,7 +3,7 @@ static const char *const autostart[] = {
     "xset", "r", "rate", "200", "30", NULL,
     "xrandr", "--output", "HDMI-1", "--primary", "--left-of", "eDP-1", NULL,
     "setxkbmap", "-option", "caps:swapescape", NULL,
-    "feh", "--no-fehbg", "--bg-fill", "/home/ivan/Pictures/wallpapers/wall", NULL,
+    "feh", "--no-fehbg", "--bg-fill", "/home/ivan/Pictures/wallpapers/.wall", NULL,
     "picom", NULL,
     "slstatus", NULL,
     "dunst", NULL,
