@@ -1,0 +1,20 @@
+static const char *const autostart[] = {
+    "xinput", "set-prop", "DELL0A23:00 06CB:CDD5 Touchpad", "libinput Tapping Enabled", "1", NULL,
+    "xset", "r", "rate", "200", "30", NULL,
+    "xrandr", "--output", "HDMI-1", "--primary", "--left-of", "eDP-1", NULL,
+    "setxkbmap", "-option", "caps:swapescape", NULL,
+    "feh", "--no-fehbg", "--bg-fill", "/home/ivan/Pictures/wallpapers/wall", NULL,
+    "picom", NULL,
+    "slstatus", NULL,
+    "dunst", NULL,
+    "fcitx5", NULL,
+    "xdg-mime", "default", "firefox.desktop", "text/html", NULL,
+    "xdg-mime", "default", "org.pwmt.zathura-pdf-mupdf.desktop", "application/pdf", NULL,
+    "xdg-mime", "default", "org.pwmt.zathura-pdf-mupdf.desktop", "application/epub", NULL,
+    "xdg-settings", "set", "default-web-browser", "firefox.desktop", NULL,
+    "gsettings", "set", "org.gnome.desktop.interface", "font-name", "Noto Sans 10", NULL,
+    "gsettings", "set", "org.gnome.desktop.interface", "icon-theme", "Tela-circle-blue", NULL,
+    "gsettings", "set", "org.gnome.desktop.interface", "cursor-theme", "oreo_spark_purple_cursors", NULL,
+    "gsettings", "set", "org.gnome.desktop.interface", "gtk-theme", "Catppuccin-Mocha-Mauve", NULL,
+	NULL /* terminate */
+};
