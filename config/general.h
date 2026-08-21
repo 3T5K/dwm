@@ -4,7 +4,7 @@
 static const unsigned int borderpx   = 3;        /* border pixel of windows */
 static const unsigned int mgap       = 10;       /* monocle layout gap */
 static const unsigned int snap       = 32;       /* snap pixel */
-static const unsigned int defaulttag = 2;        /* default tag on startup */
+static const unsigned int defaulttag = 1;        /* default tag on startup */
 static const int showbar             = 1;        /* 0 means no bar */
 static const int topbar              = 1;        /* 0 means bottom bar */
 static const char *fonts[]           = { "CaskaydiaCoveNerdFont:size=13", "monospace:size=10" };
