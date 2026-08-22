@@ -46,8 +46,14 @@ static const int lockfullscreen = 1; /* 1 will force focus on the fullscreen win
 static const int refreshrate = 60;   /* refresh rate (per second) for client move/resize */
 
 static const Layout layouts[] = {
-	/* symbol     arrange function */
-	{ "[]=",      tile },    /* first entry is default */
-	{ "><>",      NULL },    /* no layout function means floating behavior */
-	{ "[M]",      monocle },
+	/*               symbol     arrange function */
+	[LtTile]    = { "[]=",      tile    }, /* first entry is default */
+	[LtFloat]   = { "><>",      NULL    }, /* no layout function means floating behavior */
+	[LtMonocle] = { "[M]",      monocle },
+};
+
+static const Layout *layoutring0[] = {
+    &layouts[LtMonocle],
+    &layouts[LtTile],
+    NULL
 };
