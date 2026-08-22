@@ -58,6 +58,7 @@
 
 /* enums */
 enum { CurNormal, CurResize, CurMove, CurLast }; /* cursor */
+enum { LtTile, LtFloat, LtMonocle }; /* layouts */
 enum { SchemeNorm, SchemeSel }; /* color schemes */
 enum { NetSupported, NetWMName, NetWMState, NetWMCheck,
        NetWMFullscreen, NetActiveWindow, NetWMWindowType,
@@ -156,6 +157,7 @@ static void configure(Client *c);
 static void configurenotify(XEvent *e);
 static void configurerequest(XEvent *e);
 static Monitor *createmon(void);
+static void cyclebetween(const Arg *arg);
 static void destroynotify(XEvent *e);
 static void detach(Client *c);
 static void detachstack(Client *c);
@@ -644,6 +646,25 @@ createmon(void)
 	m->lt[1] = &layouts[1 % LENGTH(layouts)];
 	strncpy(m->ltsymbol, layouts[0].symbol, sizeof m->ltsymbol);
 	return m;
+}
+
+void
+cyclebetween(const Arg *arg)
+{
+    Layout **i;
+    Arg lt;
+
+    if (!(arg && arg->v))
+        return;
+
+    for (i = (Layout **)arg->v; *i; ++i)
+        if (selmon->lt[selmon->sellt] == *i)
+            break;
+
+    lt.v = *i && i[1]
+         ? i[1]
+         : *(Layout **)(arg->v);
+    setlayout(&lt);
 }
 
 void
