@@ -1983,10 +1983,21 @@ unfocus(Client *c, int setfocus)
 void
 unmanage(Client *c, int destroyed)
 {
+    Client *nc, *i;
 	Monitor *m = c->mon;
 	XWindowChanges wc;
 
-	detach(c);
+    if (c->isfloating)
+        for ( nc = m->stack
+            ; nc && (!nc->isfloating || !ISVISIBLE(nc) || nc == c)
+            ; nc = nc->snext
+            );
+    else if (!(nc = nexttiled(c->next)))
+        for (i = m->clients; i != c; i = i->next)
+            if (!i->isfloating && ISVISIBLE(i))
+                nc = i;
+
+    detach(c);
 	detachstack(c);
 	if (!destroyed) {
 		wc.border_width = c->oldbw;
@@ -2003,7 +2014,7 @@ unmanage(Client *c, int destroyed)
 	if (lastfocused == c)
 		lastfocused = NULL;
 	free(c);
-	focus(NULL);
+	focus(nc);
 	updateclientlist();
 	arrange(m);
 }
