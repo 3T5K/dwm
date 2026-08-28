@@ -65,6 +65,16 @@ enum { NetSupported, NetWMName, NetWMState, NetWMCheck,
 enum { WMProtocols, WMDelete, WMState, WMTakeFocus, WMLast }; /* default atoms */
 enum { ClkTagBar, ClkLtSymbol, ClkStatusText, ClkWinTitle,
        ClkClientWin, ClkRootWin, ClkLast }; /* clicks */
+enum {
+    TileFocusVertOverflow = 1 << 0,
+    TileFocusHorzOverflow = 1 << 1,
+    TileFocusMasterTop    = 1 << 2,
+    TileFocusMasterBottom = 1 << 3,
+    TileFocusMasterLast   = 1 << 4,
+    TileFocusStackTop     = 1 << 5,
+    TileFocusStackBottom  = 1 << 6,
+    TileFocusStackLast    = 1 << 7,
+};
 
 typedef union {
 	int i;
@@ -149,6 +159,8 @@ typedef struct {
     int     st   ; /* is selected client in stack                            */
 } TileInfo;
 
+typedef void(*TileFocusCallback)(const Arg *);
+
 /* function declarations */
 static void applyrules(Client *c);
 static int applysizehints(Client *c, int *x, int *y, int *w, int *h, int interact);
@@ -176,6 +188,7 @@ static void expose(XEvent *e);
 static void focus(Client *c);
 static void focusin(XEvent *e);
 static void focusmon(const Arg *arg);
+static void focusrestack(Client *c);
 static void focusstack(const Arg *arg);
 static Atom getatomprop(Client *c, Atom prop);
 static int getrootptr(int *x, int *y);
@@ -217,6 +230,8 @@ static void spawn(const Arg *arg);
 static void tag(const Arg *arg);
 static void tagmon(const Arg *arg);
 static void tile(Monitor *m);
+static void tilefocus(const Arg *arg);
+static void tilefocusdefaultfallback(const Arg *arg);
 static TileInfo tileinfo(void);
 static void togglebar(const Arg *arg);
 static void togglefloating(const Arg *arg);
@@ -842,6 +857,15 @@ focusmon(const Arg *arg)
 	unfocus(selmon->sel, 0);
 	selmon = m;
 	focus(NULL);
+}
+
+void
+focusrestack(Client *c)
+{
+    if (c) {
+        focus(c);
+        restack(selmon);
+    }
 }
 
 void
@@ -1758,6 +1782,110 @@ tileinfo(void)
     ti.st = ti.si >= selmon->nmaster;
 
     return ti;
+}
+
+void
+tilefocus(const Arg *arg)
+{
+    TileInfo ti;
+    Client *x, *y, **bsts[2] = { ti.bs, ti.ts };
+    int nc, mm, ms, mt, mb, north, south, east, west, dir, of;
+
+    if (selmon->lt[selmon->sellt]->arrange != &tile) {
+        if (tilefocusfallback)
+            tilefocusfallback(arg);
+        return;
+    }
+
+    if (!arg || !selmon->sel)
+        return;
+
+    mm = tilefocuscfg & (TileFocusMasterTop | TileFocusMasterBottom | TileFocusMasterLast);
+    ms = tilefocuscfg & (TileFocusStackTop  | TileFocusStackBottom  | TileFocusStackLast );
+    if ( ( mm != TileFocusMasterTop && mm != TileFocusMasterBottom && mm != TileFocusMasterLast )
+      || ( ms != TileFocusStackTop  && ms != TileFocusStackBottom  && ms != TileFocusStackLast  ) )
+        return;
+
+    if (selmon->sel->isfloating) {
+        if (!(selmon->sel->isfullscreen && lockfullscreen)) {
+            for (x = selmon->stack; x && (!ISVISIBLE(x) || x->isfloating); x = x->snext);
+            focusrestack(x);
+        }
+        return;
+    }
+
+    ti = tileinfo();
+    if (ti.nc == 0)
+        return;
+
+    north = arg->i == 'N' || arg->i == 'n';
+    south = arg->i == 'S' || arg->i == 's';
+    if (north || south) {
+        focusrestack((int[2]){ ti.si == (ti.st ? selmon->nmaster : 0)
+                             , ti.si + 1 == selmon->nmaster || !ti.cs[1] }[south]
+            ? (tilefocuscfg & TileFocusVertOverflow)
+            ? bsts[south][ti.st] : NULL : ti.cs[south]);
+        return;
+    }
+
+    if (selmon->nmaster == 0 || ti.nc <= selmon->nmaster)
+        return;
+
+    west = arg->i == 'W' || arg->i == 'w';
+    east = arg->i == 'E' || arg->i == 'e';
+    of   = tilefocuscfg & TileFocusHorzOverflow;
+    dir  = ( ti.st && west) ? 0
+         : (!ti.st && west) ? (of ? 1 : -1)
+         : ( ti.st && east) ? (of ? 0 : -1)
+         : (!ti.st && east) ? 1
+         : -1
+         ;
+
+    if (!(west || east) || dir == -1)
+        return;
+
+    mt = tilefocuscfg & (dir ? TileFocusStackTop    : TileFocusMasterTop   );
+    mb = tilefocuscfg & (dir ? TileFocusStackBottom : TileFocusMasterBottom);
+    if (mt || mb) {
+        focusrestack(bsts[mt != 0][dir]);
+        return;
+    }
+
+    for (x = selmon->stack; x; x = x->snext)
+        if (ISVISIBLE(x) && !x->isfloating) {
+            for (nc = 0, y = nexttiled(selmon->clients)
+                    ; y && y != x
+                    ; y = nexttiled(y->next), ++nc);
+            if ((int[2]){ nc <  selmon->nmaster
+                        , nc >= selmon->nmaster }[dir]) {
+                focusrestack(x);
+                return;
+            }
+        }
+}
+
+void
+tilefocusdefaultfallback(const Arg *arg)
+{
+    Arg a;
+
+    if (!arg)
+        return;
+
+    switch (arg->i) {
+        case 'N':
+        case 'n':
+            a.i = -1;
+            break;
+        case 'S':
+        case 's':
+            a.i = +1;
+            break;
+        default:
+            return;
+    }
+
+    focusstack(&a);
 }
 
 void
