@@ -65,6 +65,12 @@ enum { NetSupported, NetWMName, NetWMState, NetWMCheck,
 enum { WMProtocols, WMDelete, WMState, WMTakeFocus, WMLast }; /* default atoms */
 enum { ClkTagBar, ClkLtSymbol, ClkStatusText, ClkWinTitle,
        ClkClientWin, ClkRootWin, ClkLast }; /* clicks */
+enum {
+    TmpNmRespectNmaster     = 1 << 0,
+    TmpNmHookUnmanage       = 1 << 1,
+    TmpNmHookToggleFloating = 1 << 2,
+    TmpNmHookSetFullscreen  = 1 << 3,
+};
 
 typedef union {
 	int i;
@@ -208,6 +214,7 @@ static void spawn(const Arg *arg);
 static void tag(const Arg *arg);
 static void tagmon(const Arg *arg);
 static void tile(Monitor *m);
+static void tmpnmdec(Client *c, int arg);
 static void togglebar(const Arg *arg);
 static void togglefloating(const Arg *arg);
 static void toggletag(const Arg *arg);
@@ -1485,6 +1492,7 @@ setfullscreen(Client *c, int fullscreen)
 	if (fullscreen && !c->isfullscreen) {
 		XChangeProperty(dpy, c->win, netatom[NetWMState], XA_ATOM, 32,
 			PropModeReplace, (unsigned char*)&netatom[NetWMFullscreen], 1);
+        tmpnmdec(c, TmpNmHookSetFullscreen);
 		c->isfullscreen = 1;
 		c->oldstate = c->isfloating;
 		c->oldbw = c->bw;
@@ -1713,6 +1721,25 @@ tile(Monitor *m)
 }
 
 void
+tmpnmdec(Client *c, int arg)
+{
+    Client *i;
+    int nc, si;
+
+    if (!c || !c->mon || !(tmpnmcfg & arg) || c->isfloating || !ISVISIBLE(c))
+        return;
+
+    for (nc = si = 0, i = nexttiled(c->mon->clients); i; ++nc, i = nexttiled(i->next))
+        if (i == c)
+            si = nc;
+    c->mon->nmaster
+        = (nc == 1 && (tmpnmcfg & TmpNmRespectNmaster)) ? nmaster
+        : (nc < c->mon->nmaster) ? nc - (nc > MAX(tmpnmdectil, 0))
+        : c->mon->nmaster - (si < c->mon->nmaster
+                && c->mon->nmaster > MAX(tmpnmdectil, 0));
+}
+
+void
 togglebar(const Arg *arg)
 {
 	selmon->showbar = !selmon->showbar;
@@ -1728,6 +1755,7 @@ togglefloating(const Arg *arg)
 		return;
 	if (selmon->sel->isfullscreen) /* no support for fullscreen windows */
 		return;
+    tmpnmdec(selmon->sel, TmpNmHookToggleFloating);
 	selmon->sel->isfloating = !selmon->sel->isfloating || selmon->sel->isfixed;
 	if (selmon->sel->isfloating)
 		resize(selmon->sel, selmon->sel->x, selmon->sel->y,
@@ -1781,6 +1809,7 @@ unmanage(Client *c, int destroyed)
 	Monitor *m = c->mon;
 	XWindowChanges wc;
 
+    tmpnmdec(c, TmpNmHookUnmanage);
 	detach(c);
 	detachstack(c);
 	if (!destroyed) {
