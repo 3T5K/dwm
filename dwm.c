@@ -1743,7 +1743,7 @@ tagmon(const Arg *arg)
 void
 tile(Monitor *m)
 {
-	unsigned int i, n, h, mw, my, ty;
+	unsigned int i, n, h, mw, my, ty, ns;
 	Client *c;
     int em = m->pertag->exstacks[m->pertag->curtag].master
       , es = m->pertag->exstacks[m->pertag->curtag].stack;
@@ -1752,21 +1752,38 @@ tile(Monitor *m)
 	if (n == 0)
 		return;
 
-	if (n > m->nmaster)
+	if (n > m->nmaster) {
 		mw = m->nmaster ? m->ww * m->mfact : 0;
-	else
+		ns = m->nmaster > 0 ? 2 : 1;
+	} else {
 		mw = m->ww;
+		ns = 1;
+	}
 	for (i = my = ty = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), i++)
 		if (i < m->nmaster) {
-			h = em ? m->wh : (m->wh - my) / (MIN(n, m->nmaster) - i);
-            resize(c, m->wx, m->wy + my * !em, mw - (2*c->bw), h - (2*c->bw), 0);
-			if (my + HEIGHT(c) < m->wh)
-				my += HEIGHT(c);
-        } else {
-			h = es ? m->wh : (m->wh - ty) / (n - i);
-			resize(c, m->wx + mw, m->wy + ty * !es, m->ww - mw - (2*c->bw), h - (2*c->bw), 0);
-			if (ty + HEIGHT(c) < m->wh)
-				ty += HEIGHT(c);
+			h = em ? m->wh - 2 * ogap
+                : (m->wh - 2 * ogap + igap - my) / (MIN(n, m->nmaster) - i);
+			resize( c
+				  , m->wx + ogap
+				  , m->wy + ogap + my * !em
+				  , mw - (ns ^ 3) * ogap - 2 * c->bw - (ns - 1) * (igap / 2)
+				  , h - 2 * c->bw - igap * !em
+				  , False
+				  );
+			if (my + HEIGHT(c) + igap < m->wh - 2 * ogap)
+				my += HEIGHT(c) + igap;
+		} else {
+			h = es ? m->wh - 2 * ogap
+                : (m->wh - 2 * ogap + igap - ty) / (n - i);
+			resize( c
+				  , m->wx + (ns & 1) * ogap + mw + (ns - 1) * (igap / 2)
+				  , m->wy + ogap + ty * !es
+				  , m->ww - (ns ^ 3) * ogap - mw - 2 * c->bw - (ns - 1) * (igap / 2)
+				  , h - 2 * c->bw - igap * !es
+				  , False
+				  );
+			if (ty + HEIGHT(c) + igap < m->wh - 2 * ogap)
+				ty += HEIGHT(c) + igap;
 		}
 }
 
