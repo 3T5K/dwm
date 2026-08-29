@@ -65,6 +65,12 @@ enum { NetSupported, NetWMName, NetWMState, NetWMCheck,
 enum { WMProtocols, WMDelete, WMState, WMTakeFocus, WMLast }; /* default atoms */
 enum { ClkTagBar, ClkLtSymbol, ClkStatusText, ClkWinTitle,
        ClkClientWin, ClkRootWin, ClkLast }; /* clicks */
+enum {
+    CycleNext     = 1 << 0,
+    CyclePrev     = 1 << 1,
+    CycleFloating = 1 << 2,
+    CycleTiled    = 1 << 3,
+};
 
 typedef union {
 	int i;
@@ -156,6 +162,7 @@ static void configure(Client *c);
 static void configurenotify(XEvent *e);
 static void configurerequest(XEvent *e);
 static Monitor *createmon(void);
+static void cyclefocus(const Arg *arg);
 static void destroynotify(XEvent *e);
 static void detach(Client *c);
 static void detachstack(Client *c);
@@ -644,6 +651,44 @@ createmon(void)
 	m->lt[1] = &layouts[1 % LENGTH(layouts)];
 	strncpy(m->ltsymbol, layouts[0].symbol, sizeof m->ltsymbol);
 	return m;
+}
+
+void
+cyclefocus(const Arg *arg)
+{
+    Client *c = NULL, *i = NULL;
+    int t, m1, m2;
+
+    if (!arg || !selmon->sel || (selmon->sel->isfullscreen && lockfullscreen))
+        return;
+
+    m1 = arg->i & (CycleNext  | CyclePrev    );
+    m2 = arg->i & (CycleTiled | CycleFloating);
+    if ( (m1 != CycleNext  && m1 != CyclePrev    )
+      || (m2 != CycleTiled && m2 != CycleFloating) )
+        return;
+
+    t = m2 == CycleTiled;
+    if (!t^selmon->sel->isfloating)
+        for (c = selmon->stack; c && (!ISVISIBLE(c) || !t^c->isfloating); c = c->snext);
+    else if (m1 == CyclePrev) {
+        for (c = selmon->sel->next; c && (!ISVISIBLE(c) || !t^c->isfloating); c = c->next);
+        if (!c)
+            for (c = selmon->clients; c && (!ISVISIBLE(c) || !t^c->isfloating); c = c->next);
+    } else if (m1 == CycleNext) {
+        for (i = selmon->clients; i != selmon->sel; i = i->next)
+            if (ISVISIBLE(i) && t^i->isfloating)
+                c = i;
+        if (!c)
+            for (; i; i = i->next)
+                if (ISVISIBLE(i) && t^i->isfloating)
+                    c = i;
+    }
+
+    if (c && c != selmon->sel) {
+        focus(c);
+        restack(selmon);
+    }
 }
 
 void
