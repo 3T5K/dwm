@@ -66,7 +66,7 @@ enum { WMProtocols, WMDelete, WMState, WMTakeFocus, WMLast }; /* default atoms *
 enum { ClkTagBar, ClkLtSymbol, ClkStatusText, ClkWinTitle,
        ClkClientWin, ClkRootWin, ClkLast }; /* clicks */
 enum { XrayIn, XrayAc };
-enum { XrayGrpNone };
+enum { XrayGrpNone, XrayGrpTileMaster, XrayGrpTileStack };
 
 typedef union {
 	int i;
@@ -287,6 +287,8 @@ static Monitor *mons, *selmon;
 static Window root, wmcheckwin;
 static void (*xrayhandlers[])(Client *) = {
     [XrayGrpNone] = NULL,
+    [XrayGrpTileMaster] = xraydefhandler,
+    [XrayGrpTileStack]  = xraydefhandler,
 };
 
 /* configuration, allows nested code to access above variables */
@@ -1743,29 +1745,58 @@ tagmon(const Arg *arg)
 void
 tile(Monitor *m)
 {
-	unsigned int i, n, h, mw, my, ty;
-	Client *c;
+    unsigned int i, n, h, mw, my, ty, si, ma, sa;
+    Client *c, *xr[2];
 
-	for (n = 0, c = nexttiled(m->clients); c; xraycfg(c, XrayGrpNone, -1), c = nexttiled(c->next), n++);
-	if (n == 0)
-		return;
+    for (n = si = 0, xr[0] = xr[1] = NULL, c = nexttiled(m->clients); c; c = nexttiled(c->next), ++n) {
+        if (m->sel == c)
+            si = n;
 
-	if (n > m->nmaster)
-		mw = m->nmaster ? m->ww * m->mfact : 0;
-	else
-		mw = m->ww;
-	for (i = my = ty = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), i++)
-		if (i < m->nmaster) {
-			h = m->stacks.master ? m->wh : (m->wh - my) / (MIN(n, m->nmaster) - i);
+        if (c->xraystat == XrayAc) switch (c->xraygrp) {
+            case XrayGrpTileMaster : xr[0] = c; break;
+            case XrayGrpTileStack  : xr[1] = c; break;
+        }
+    }
+
+    if (n == 0)
+        return;
+
+    if (m->sel && !m->sel->isfloating)
+        xr[si >= m->nmaster] = m->sel;
+
+    if (n > m->nmaster)
+        mw = m->nmaster ? m->ww * m->mfact : 0;
+    else
+        mw = m->ww;
+    for (i = ma = sa = my = ty = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), i++) {
+        if (i < m->nmaster) {
+            xraycfg( c
+                   , m->stacks.master ? XrayGrpTileMaster : XrayGrpNone
+                   , xr[0] == c ? (ma = 1, XrayAc) : XrayIn
+                   );
+            h = m->stacks.master ? m->wh : (m->wh - my) / (MIN(n, m->nmaster) - i);
             resize(c, m->wx, m->wy + my * !m->stacks.master, mw - (2*c->bw), h - (2*c->bw), 0);
-			if (my + HEIGHT(c) < m->wh)
-				my += HEIGHT(c);
+            if (my + HEIGHT(c) < m->wh)
+                my += HEIGHT(c);
         } else {
-			h = m->stacks.stack ? m->wh : (m->wh - ty) / (n - i);
-			resize(c, m->wx + mw, m->wy + ty * !m->stacks.stack, m->ww - mw - (2*c->bw), h - (2*c->bw), 0);
-			if (ty + HEIGHT(c) < m->wh)
-				ty += HEIGHT(c);
-		}
+            xraycfg( c
+                   , m->stacks.stack ? XrayGrpTileStack : XrayGrpNone
+                   , xr[1] == c ? (sa = 1, XrayAc) : XrayIn
+                   );
+            h = m->stacks.stack ? m->wh : (m->wh - ty) / (n - i);
+            resize(c, m->wx + mw, m->wy + ty * !m->stacks.stack, m->ww - mw - (2*c->bw), h - (2*c->bw), 0);
+            if (ty + HEIGHT(c) < m->wh)
+                ty += HEIGHT(c);
+        }
+
+        xrayapply(c);
+    }
+
+    if (!ma && m->stacks.master)
+        xrayfallback(XrayGrpTileMaster);
+
+    if (!sa && m->stacks.stack)
+        xrayfallback(XrayGrpTileStack);
 }
 
 void
