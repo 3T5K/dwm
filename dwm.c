@@ -105,6 +105,11 @@ struct Client {
 };
 
 typedef struct {
+    int master;
+    int stack;
+} ExStack;
+
+typedef struct {
 	unsigned int mod;
 	KeySym keysym;
 	void (*func)(const Arg *);
@@ -149,6 +154,7 @@ struct Monitor {
 	Monitor *next;
 	Window barwin;
 	const Layout *lt[2];
+    ExStack stacks;
 };
 
 typedef struct {
@@ -184,6 +190,7 @@ static void drawbar(Monitor *m);
 static void drawbars(void);
 static void enternotify(XEvent *e);
 static void expose(XEvent *e);
+static void exstack(const Arg *arg);
 static void focus(Client *c);
 static void focusin(XEvent *e);
 static void focusmon(const Arg *arg);
@@ -690,6 +697,8 @@ createmon(void)
 	m->topbar = topbar;
 	m->lt[0] = &layouts[0];
 	m->lt[1] = &layouts[1 % LENGTH(layouts)];
+    m->stacks.master = 0;
+    m->stacks.stack  = 0;
 	strncpy(m->ltsymbol, layouts[0].symbol, sizeof m->ltsymbol);
 	return m;
 }
@@ -831,6 +840,26 @@ expose(XEvent *e)
 
 	if (ev->count == 0 && (m = wintomon(ev->window)))
 		drawbar(m);
+}
+
+void
+exstack(const Arg *arg)
+{
+    Client *c;
+    int n;
+
+    if (selmon->lt[selmon->sellt]->arrange != &tile
+            || !selmon->sel || selmon->sel->isfloating)
+        return;
+
+    for (n = 0, c = nexttiled(selmon->clients); c && selmon->sel != c; c = nexttiled(c->next), ++n);
+
+    if (n < selmon->nmaster)
+        selmon->stacks.master = !selmon->stacks.master;
+    else
+        selmon->stacks.stack = !selmon->stacks.stack;
+
+    arrange(selmon);
 }
 
 void
@@ -1840,13 +1869,13 @@ tile(Monitor *m)
 		mw = m->ww;
 	for (i = my = ty = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), i++)
 		if (i < m->nmaster) {
-			h = (m->wh - my) / (MIN(n, m->nmaster) - i);
-			resize(c, m->wx, m->wy + my, mw - (2*c->bw), h - (2*c->bw), 0);
+			h = m->stacks.master ? m->wh : (m->wh - my) / (MIN(n, m->nmaster) - i);
+            resize(c, m->wx, m->wy + my * !m->stacks.master, mw - (2*c->bw), h - (2*c->bw), 0);
 			if (my + HEIGHT(c) < m->wh)
 				my += HEIGHT(c);
-		} else {
-			h = (m->wh - ty) / (n - i);
-			resize(c, m->wx + mw, m->wy + ty, m->ww - mw - (2*c->bw), h - (2*c->bw), 0);
+        } else {
+			h = m->stacks.stack ? m->wh : (m->wh - ty) / (n - i);
+			resize(c, m->wx + mw, m->wy + ty * !m->stacks.stack, m->ww - mw - (2*c->bw), h - (2*c->bw), 0);
 			if (ty + HEIGHT(c) < m->wh)
 				ty += HEIGHT(c);
 		}
