@@ -2226,15 +2226,35 @@ zoom(const Arg *arg)
 void
 swapmon(const Arg *arg)
 {
-    if (mons->next == NULL)
+    Monitor *arr[2], *m1, *m2, *i;
+    int x;
+
+    if (!arg || !mons->next)
         return;
 
-    Monitor *m1 = mons;
-    Monitor *m2 = mons->next;
+    m1 = selmon;
 
-    unsigned int tmp = m1->tagset[m1->seltags];
-    m1->tagset[m1->seltags] = m2->tagset[m2->seltags];
-    m2->tagset[m2->seltags] = tmp;
+    for ( m2 = NULL, i = mons
+        ; i && i != m1
+        ; m2 = i, i = i->next );
+
+    if ((arg->i > 0 && m1->next) || !m2)
+        m2 = m1->next;
+
+    if (m1->sel)
+        unfocus(m1->sel, 1);
+
+    unsigned int tmp_ts[2] = { m1->tagset[0], m1->tagset[1] };
+    m1->tagset[0] = m2->tagset[0];
+    m1->tagset[1] = m2->tagset[1];
+    m2->tagset[0] = tmp_ts[0];
+    m2->tagset[1] = tmp_ts[1];
+
+    const Layout *tmp_lt[2] = { m1->lt[0], m1->lt[1] };
+    m1->lt[0] = m2->lt[0];
+    m1->lt[1] = m2->lt[1];
+    m2->lt[0] = tmp_lt[0];
+    m2->lt[1] = tmp_lt[1];
 
     Client *c;
     for (c = m1->clients; c; c = c->next)
@@ -2242,17 +2262,39 @@ swapmon(const Arg *arg)
     for (c = m2->clients; c; c = c->next)
         c->mon = m1;
 
-    Client *tmp_clients = m1->clients;
-    m1->clients = m2->clients;
-    m2->clients = tmp_clients;
+#define SWAP_(type, member) \
+    type tmp_##member = m1->member; \
+    m1->member = m2->member; \
+    m2->member = tmp_##member;
 
-    Client *tmp_stack = m1->stack;
-    m1->stack = m2->stack;
-    m2->stack = tmp_stack;
+    SWAP_(Client *, clients);
+    SWAP_(Client *, stack);
+    SWAP_(Pertag *, pertag);
+    SWAP_(Client *, sel);
+    SWAP_(int, showbar);
+    SWAP_(int, topbar);
+    SWAP_(float, mfact);
+    SWAP_(int, nmaster);
+    SWAP_(unsigned int, sellt);
+    SWAP_(unsigned int, seltags);
 
-    focus(NULL);
-    arrange(m1);
-    arrange(m2);
+#undef SWAP_
+
+    arr[0] = m1; arr[1] = m2;
+    for (x = 0; x < 2; ++x) {
+        updatebarpos(arr[x]);
+        XMoveResizeWindow(
+            dpy,
+            arr[x]->barwin,
+            arr[x]->wx,
+            arr[x]->by,
+            arr[x]->ww,
+            bh
+        );
+        arrange(arr[x]);
+    }
+
+    focus(m1->sel);
 }
 
 int
