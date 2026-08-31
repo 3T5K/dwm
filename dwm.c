@@ -2226,15 +2226,23 @@ zoom(const Arg *arg)
 void
 swapmon(const Arg *arg)
 {
+    Monitor *m1, *m2, *i;
+
     if (mons->next == NULL)
         return;
 
-    Monitor *m1 = mons;
-    Monitor *m2 = mons->next;
+    m1 = mons;
+    m2 = mons->next;
 
     unsigned int tmp = m1->tagset[m1->seltags];
     m1->tagset[m1->seltags] = m2->tagset[m2->seltags];
     m2->tagset[m2->seltags] = tmp;
+
+    const Layout *tmp_lt[2] = { m1->lt[0], m1->lt[1] };
+    m1->lt[0] = m2->lt[0];
+    m1->lt[1] = m2->lt[1];
+    m2->lt[0] = tmp_lt[0];
+    m2->lt[1] = tmp_lt[1];
 
     Client *c;
     for (c = m1->clients; c; c = c->next)
@@ -2242,17 +2250,35 @@ swapmon(const Arg *arg)
     for (c = m2->clients; c; c = c->next)
         c->mon = m1;
 
-    Client *tmp_clients = m1->clients;
-    m1->clients = m2->clients;
-    m2->clients = tmp_clients;
+#define SWAP_(type, member) \
+    type tmp_##member = m1->member; \
+    m1->member = m2->member; \
+    m2->member = tmp_##member;
 
-    Client *tmp_stack = m1->stack;
-    m1->stack = m2->stack;
-    m2->stack = tmp_stack;
+    SWAP_(Client *, clients);
+    SWAP_(Client *, stack);
+    SWAP_(Pertag *, pertag);
+    SWAP_(Client *, sel);
+    SWAP_(int, showbar);
+    SWAP_(int, topbar);
+    SWAP_(float, mfact);
+    SWAP_(int, nmaster);
+    SWAP_(unsigned int, sellt);
+
+#undef SWAP_
 
     focus(NULL);
-    arrange(m1);
-    arrange(m2);
+    for (i = mons; i; i = i->next) {
+        updatebarpos(i);
+        XMoveResizeWindow( dpy
+                         , i->barwin
+                         , i->wx
+                         , i->by
+                         , i->ww
+                         , bh
+                         );
+        arrange(i);
+    }
 }
 
 int
