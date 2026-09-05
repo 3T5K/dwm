@@ -76,6 +76,8 @@ enum {
     TileFocusStackTop     = 1 << 5,
     TileFocusStackBottom  = 1 << 6,
     TileFocusStackLast    = 1 << 7,
+    TileFocusMasterXrayAc = 1 << 8,
+    TileFocusStackXrayAc  = 1 << 9,
 };
 
 typedef union {
@@ -1935,6 +1937,11 @@ tilefocus(const Arg *arg)
 
     if (!(west || east) || dir == -1)
         return;
+
+    if (tilefocuscfg & (dir ? TileFocusStackXrayAc : TileFocusMasterXrayAc) && ti.xs[dir]) {
+        focusrestack(ti.xs[dir]);
+        return;
+    }
 
     mt = tilefocuscfg & (dir ? TileFocusStackTop    : TileFocusMasterTop   );
     mb = tilefocuscfg & (dir ? TileFocusStackBottom : TileFocusMasterBottom);

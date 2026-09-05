@@ -22,7 +22,9 @@ static const TileFocusCallback tilefocusfallback
     = tilefocusdefaultfallback;
 
 static const int tilefocuscfg
-    = TileFocusMasterLast
+    = TileFocusMasterXrayAc
+    | TileFocusMasterLast
+    | TileFocusStackXrayAc
     | TileFocusStackLast
     | TileFocusVertOverflow
     | TileFocusHorzOverflow
