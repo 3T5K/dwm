@@ -67,6 +67,14 @@ enum { ClkTagBar, ClkLtSymbol, ClkStatusText, ClkWinTitle,
        ClkClientWin, ClkRootWin, ClkLast }; /* clicks */
 enum { XrayIn, XrayAc };
 enum { XrayGrpNone, XrayGrpTileMaster, XrayGrpTileStack };
+enum {
+    TileMoveVertOverflow = 1 << 0,
+    TileMoveHorzOverflow = 1 << 1,
+    TileMoveMasterTop    = 1 << 2,
+    TileMoveMasterBottom = 1 << 3,
+    TileMoveStackTop     = 1 << 4,
+    TileMoveStackBottom  = 1 << 5,
+};
 
 typedef union {
 	int i;
@@ -159,6 +167,8 @@ typedef struct {
     int     st   ; /* is selected client in stack                            */
 } TileInfo;
 
+typedef void (*TileMoveCallback)(const Arg *);
+
 /* function declarations */
 static void applyrules(Client *c);
 static int applysizehints(Client *c, int *x, int *y, int *w, int *h, int interact);
@@ -233,6 +243,7 @@ static void tag(const Arg *arg);
 static void tagmon(const Arg *arg);
 static void tile(Monitor *m);
 static TileInfo tileinfo(void);
+static void tilemove(const Arg *arg);
 static void togglebar(const Arg *arg);
 static void togglefloating(const Arg *arg);
 static void toggletag(const Arg *arg);
@@ -1943,6 +1954,68 @@ tileinfo(void)
     ti.st = ti.si >= selmon->nmaster;
 
     return ti;
+}
+
+void
+tilemove(const Arg *arg)
+{
+    TileInfo ti;
+    Client *c, **bsts[2] = { ti.bs, ti.ts };
+    int mm, ms, mt, north, south, west, east, of, dir;
+
+    if (selmon->lt[selmon->sellt]->arrange != &tile) {
+        if (tilemovefallback)
+            tilemovefallback(arg);
+        return;
+    }
+
+    if (!arg || !selmon->sel || selmon->sel->isfloating ||
+            (selmon->sel->isfullscreen && lockfullscreen))
+        return;
+
+    mm = tilemovecfg & (TileMoveMasterTop | TileMoveMasterBottom);
+    ms = tilemovecfg & (TileMoveStackTop  | TileMoveStackBottom );
+    if ( (mm != TileMoveMasterTop && mm != TileMoveMasterBottom)
+      || (ms != TileMoveStackTop  && ms != TileMoveStackBottom ) )
+        return;
+
+    ti = tileinfo();
+    if (ti.nc == 0)
+        return;
+
+    north = arg->i == 'N' || arg->i == 'n';
+    south = arg->i == 'S' || arg->i == 's';
+    if (north || south) {
+        c = (bsts[north][ti.st] == selmon->sel)
+          ? (tilemovecfg & TileMoveVertOverflow)
+          ? bsts[south][ti.st] : NULL : ti.cs[south];
+        if (c) {
+            cswap(c, selmon->sel);
+            arrange(selmon);
+        }
+        return;
+    }
+
+    west = arg->i == 'W' || arg->i == 'w';
+    east = arg->i == 'E' || arg->i == 'e';
+    of   = tilemovecfg & TileMoveHorzOverflow;
+    dir  = ( ti.st && west) ? 0
+         : (!ti.st && west) ? (of ? 1 : -1)
+         : ( ti.st && east) ? (of ? 0 : -1)
+         : (!ti.st && east) ? 1
+         : -1
+         ;
+
+    if (!(west || east) || dir == -1)
+        return;
+
+    selmon->nmaster = dir
+        ? MIN(selmon->nmaster, ti.nc) - 1
+        : selmon->nmaster + 1;
+    mt = (tilemovecfg & (dir ? TileMoveStackTop : TileMoveMasterTop)) != 0;
+    c  = bsts[mt][dir];
+    cmove(selmon->sel, c ? c : bsts[!dir][!dir], c ? !mt : dir);
+    arrange(selmon);
 }
 
 void

@@ -18,6 +18,15 @@ static const char *colors[][3]      = {
 	[SchemeSel]  = { col_gray4, col_cyan,  col_cyan  },
 };
 
+static const TileMoveCallback tilemovefallback = NULL;
+
+static const int tilemovecfg
+    = TileMoveVertOverflow
+    | TileMoveHorzOverflow
+    | TileMoveMasterBottom
+    | TileMoveStackTop
+    ;
+
 /* tagging */
 static const char *tags[] = { "1", "2", "3", "4", "5", "6", "7", "8", "9" };
 
@@ -70,6 +79,10 @@ static const Key keys[] = {
 	{ MODKEY,                       XK_k,      focusstack,     {.i = -1 } },
 	{ MODKEY,                       XK_i,      incnmaster,     {.i = +1 } },
 	{ MODKEY,                       XK_d,      incnmaster,     {.i = -1 } },
+    { MODKEY|ShiftMask,             XK_h,      tilemove,       {.i = 'W' } },
+    { MODKEY|ShiftMask,             XK_j,      tilemove,       {.i = 'S' } },
+    { MODKEY|ShiftMask,             XK_k,      tilemove,       {.i = 'N' } },
+    { MODKEY|ShiftMask,             XK_l,      tilemove,       {.i = 'E' } },
 	{ MODKEY,                       XK_h,      setmfact,       {.f = -0.05} },
 	{ MODKEY,                       XK_l,      setmfact,       {.f = +0.05} },
     { MODKEY,                       XK_x,      exstack,        {0} },
