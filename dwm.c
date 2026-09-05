@@ -153,6 +153,7 @@ typedef struct {
     Client *bs[2]; /* bs[0]: bottom master client bs[1]: bottom stack client */
     Client *ts[2]; /* ts[0]: top master client    ts[1]: top stack client    */
     Client *cs[2]; /* cs[0]: previous client      cs[1]: next client         */
+    Client *xs[2]; /* xs[0]: master XrayAc        xs[1]: stack XrayAc        */
     int     nc   ; /* client count                                           */
     int     si   ; /* selected client index (from 0)                         */
     int     st   ; /* is selected client in stack                            */
@@ -1817,6 +1818,10 @@ tileinfo(void)
 
     for (ti.nc = ti.si = 0, x = ti.ts[0] = nexttiled(selmon->clients); x; x = y, ++ti.nc) {
         y = nexttiled(x->next);
+        if (x->xraystat == XrayAc) switch (x->xraygrp) {
+            case XrayGrpTileMaster : ti.xs[0] = x; break;
+            case XrayGrpTileStack  : ti.xs[1] = x; break;
+        }
         if (selmon->sel == x) {
             ti.si    = ti.nc;
             ti.cs[1] = y;
