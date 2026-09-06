@@ -2,6 +2,8 @@
 
 /* appearance */
 static const unsigned int borderpx   = 3;        /* border pixel of windows */
+static const unsigned int ogap       = 30;       /* gap on outer edges */
+static const unsigned int igap       = 10;       /* gap between windows */
 static const unsigned int mgap       = 10;       /* monocle layout gap */
 static const unsigned int snap       = 32;       /* snap pixel */
 static const unsigned int defaulttag = 1;        /* default tag on startup */
