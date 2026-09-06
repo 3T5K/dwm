@@ -27,6 +27,18 @@ static const char *colors[][3]       = {
 	[SchemeInfoNorm] = { "#cba6f7", "#1e1e2e", "#000000" }, // infobar middle  unselected {text,background,not used but cannot be empty}
 };
 
+static const TileFocusCallback tilefocusfallback
+    = tilefocusdefaultfallback;
+
+static const int tilefocuscfg
+    = TileFocusMasterXrayAc
+    | TileFocusMasterLast
+    | TileFocusStackXrayAc
+    | TileFocusStackLast
+    | TileFocusVertOverflow
+    | TileFocusHorzOverflow
+    ;
+
 /* tagging */
 static const char *tags[] = { "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX" };
 

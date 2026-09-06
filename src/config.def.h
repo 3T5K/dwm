@@ -32,6 +32,18 @@ static const char *const autostart[] = {
 	NULL /* terminate */
 };
 
+static const TileFocusCallback tilefocusfallback
+    = tilefocusdefaultfallback;
+
+static const int tilefocuscfg
+    = TileFocusMasterXrayAc
+    | TileFocusMasterLast
+    | TileFocusStackXrayAc
+    | TileFocusStackLast
+    | TileFocusVertOverflow
+    | TileFocusHorzOverflow
+    ;
+
 /* tagging */
 static const char *tags[] = { "1", "2", "3", "4", "5", "6", "7", "8", "9" };
 
@@ -90,12 +102,14 @@ static const Key keys[] = {
     { MODKEY,                       XK_e,      cyclefocus,     {.i = CycleNext | CycleTiled } },
     { MODKEY|ShiftMask,             XK_w,      cyclefocus,     {.i = CyclePrev | CycleFloating } },
     { MODKEY|ShiftMask,             XK_e,      cyclefocus,     {.i = CycleNext | CycleFloating } },
-	{ MODKEY,                       XK_j,      focusstack,     {.i = +1 } },
-	{ MODKEY,                       XK_k,      focusstack,     {.i = -1 } },
+    { MODKEY,                       XK_h,      tilefocus,      {.i = 'W' } },
+    { MODKEY,                       XK_j,      tilefocus,      {.i = 'S' } },
+    { MODKEY,                       XK_k,      tilefocus,      {.i = 'N' } },
+    { MODKEY,                       XK_l,      tilefocus,      {.i = 'E' } },
 	{ MODKEY,                       XK_i,      incnmaster,     {.i = +1 } },
 	{ MODKEY,                       XK_d,      incnmaster,     {.i = -1 } },
-	{ MODKEY,                       XK_h,      setmfact,       {.f = -0.05} },
-	{ MODKEY,                       XK_l,      setmfact,       {.f = +0.05} },
+	{ MODKEY|ShiftMask,             XK_h,      setmfact,       {.f = -0.05} },
+	{ MODKEY|ShiftMask,             XK_l,      setmfact,       {.f = +0.05} },
     { MODKEY,                       XK_x,      exstack,        {0} },
 	{ MODKEY,                       XK_Return, zoom,           {0} },
 	{ MODKEY,                       XK_Tab,    view,           {0} },
