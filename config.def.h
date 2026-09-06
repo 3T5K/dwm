@@ -23,7 +23,9 @@ static const TileMoveCallback tilemovefallback = NULL;
 static const int tilemovecfg
     = TileMoveVertOverflow
     | TileMoveHorzOverflow
+    | TileMoveMasterXDeny
     | TileMoveMasterBottom
+    | TileMoveStackXDeny
     | TileMoveStackTop
     ;
 
