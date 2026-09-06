@@ -2043,9 +2043,8 @@ tilemove(const Arg *arg)
     if (!(west || east) || dir == -1)
         return;
 
-    selmon->nmaster = dir
-        ? MIN(selmon->nmaster, ti.nc) - 1
-        : selmon->nmaster + 1;
+    selmon->nmaster = selmon->pertag->nmasters[selmon->pertag->curtag]
+       = dir ? MIN(selmon->nmaster, ti.nc) - 1 : selmon->nmaster + 1;
     mt = (tilemovecfg & (dir ? TileMoveStackTop : TileMoveMasterTop)) != 0;
     c  = bsts[mt][dir];
     cmove(selmon->sel, c ? c : bsts[!dir][!dir], c ? !mt : dir);
