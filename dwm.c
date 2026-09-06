@@ -74,6 +74,8 @@ enum {
     TileMoveMasterBottom = 1 << 3,
     TileMoveStackTop     = 1 << 4,
     TileMoveStackBottom  = 1 << 5,
+    TileMoveMasterXDeny  = 1 << 6,
+    TileMoveStackXDeny   = 1 << 7,
 };
 
 typedef union {
@@ -1961,7 +1963,7 @@ tilemove(const Arg *arg)
 {
     TileInfo ti;
     Client *c, **bsts[2] = { ti.bs, ti.ts };
-    int mm, ms, mt, north, south, west, east, of, dir;
+    int mm, mx, ms, mt, north, south, west, east, of, dir;
 
     if (selmon->lt[selmon->sellt]->arrange != &tile) {
         if (tilemovefallback)
@@ -1985,7 +1987,10 @@ tilemove(const Arg *arg)
 
     north = arg->i == 'N' || arg->i == 'n';
     south = arg->i == 'S' || arg->i == 's';
+    mx    = tilemovecfg & (ti.st ? TileMoveStackXDeny : TileMoveMasterXDeny);
     if (north || south) {
+        if (mx && ti.xs[ti.st])
+            return;
         c = (bsts[north][ti.st] == selmon->sel)
           ? (tilemovecfg & TileMoveVertOverflow)
           ? bsts[south][ti.st] : NULL : ti.cs[south];
