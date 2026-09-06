@@ -36,6 +36,7 @@ static const Key keys[] = {
 	{ MODKEY|ShiftMask,             XK_z,      setlayout,      {.v = &layouts[1]} },
 	{ MODKEY,                       XK_c,      cyclebetween,   {.v = layoutring0} },
 	{ MODKEY|ShiftMask,             XK_c,      togglefullscr,  {0} },
+    { MODKEY,                       XK_x,      exstack,        {0} },
 	{ MODKEY,                       XK_p,      setlayout,      {0} },
 	{ MODKEY,                       XK_z,      togglefloating, {0} },
 	{ MODKEY,                       XK_0,      view,           {.ui = ~0 } },
