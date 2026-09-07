@@ -24,7 +24,8 @@ make get-added
 ## Applying patches
 
 Apply patches as you please, but make sure to patch `src` as that's where the
-source files are, obviously.
+source files are, obviously. All files in `src` ending with `.orig` or `.rej`
+are ignored by Git.
 
 There is a similar mechanism as for adding patches. Prefixing a commit message
 with "applied patch:" will let you use a make target to filter the history for
@@ -47,7 +48,16 @@ added, or is removed. Avoid putting spaces in the file or subdirectory names.
 If the config directory is empty, dwm will instead fall back to
 `src/config.def.h`. As such, this file should only be modified by patches adding
 their default configuration. `src/config.h` is treated as a build artifact and
-is gitignored.
+is ignored by Git.
+
+For consistency, commits corresponding to configuration changes can have their
+messages prefixed with "config:" and be queried with:
+```sh
+make get-config
+```
+
+There is also a `.nvim.lua` file which will stop the attached LSP client for
+any files in `config`.
 
 ## Removing and reversing patches
 
