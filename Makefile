@@ -16,7 +16,7 @@ MAN_DIR  := $(INS_DIR)/share/man/man1
 NAMES    := drw dwm util
 SOURCES  := $(addprefix $(SRC_DIR)/,$(addsuffix .c,$(NAMES)))
 OBJECTS  := $(addprefix $(BLD_DIR)/,$(addsuffix .o,$(NAMES)))
-CONFIGS  := $(patsubst $(CFG_DIR)/%,%,$(shell find $(CFG_DIR) -type f | sort))
+CONFIGS  := $(patsubst $(CFG_DIR)/%,%,$(shell find $(CFG_DIR) -type f 2>/dev/null | sort))
 DWMCFG   := $(SRC_DIR)/config.h
 
 INCLUDES := -I/usr/include/freetype2 \
@@ -35,7 +35,7 @@ LDFLAGS  := -L/usr/X11R6/lib -lX11 \
 			-lXinerama \
 			-lfontconfig -lXft
 
-ERR = $(shell mkdir -p $(BLD_DIR) 2>&1)
+ERR = $(shell mkdir -p $(BLD_DIR) $(CFG_DIR) 2>&1)
 ifneq ($(ERR),)
 $(error $(ERR))
 endif
@@ -72,17 +72,17 @@ dist:
 		--transform 's#^.#$(EXE)-$(VERSION)#' .
 
 get-applied:
-	@git log --oneline --root \
+	@git log --oneline base-$(VERSION)..HEAD \
 		| grep '^\([[:digit:]]\|[[:alpha:]]\)\+ applied patch:' \
 		| sed 's/applied patch//'
 
 get-added:
-	@git log --oneline --root \
+	@git log --oneline base-$(VERSION)..HEAD \
 		| grep '^\([[:digit:]]\|[[:alpha:]]\)\+ added patch:' \
 		| sed 's/added patch//'
 
 get-config:
-	@git log --oneline --root \
+	@git log --oneline base-$(VERSION)..HEAD \
 		| grep '^\([[:digit:]]\|[[:alpha:]]\)\+ config:' \
 		| sed 's/config//'
 
