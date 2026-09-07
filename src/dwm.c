@@ -96,6 +96,12 @@ enum {
     TileMoveMasterXDeny  = 1 << 6,
     TileMoveStackXDeny   = 1 << 7,
 };
+enum {
+    TmpNmRespectNmaster     = 1 << 0,
+    TmpNmHookUnmanage       = 1 << 1,
+    TmpNmHookToggleFloating = 1 << 2,
+    TmpNmHookSetFullscreen  = 1 << 3,
+};
 
 typedef union {
 	int i;
@@ -275,6 +281,7 @@ static void tilefocus(const Arg *arg);
 static void tilefocusdefaultfallback(const Arg *arg);
 static TileInfo tileinfo(void);
 static void tilemove(const Arg *arg);
+static void tmpnmdec(Client *c, int arg);
 static void togglebar(const Arg *arg);
 static void togglefloating(const Arg *arg);
 static void togglefullscr(const Arg *arg);
@@ -1919,6 +1926,7 @@ setfullscreen(Client *c, int fullscreen)
 	if (fullscreen && !c->isfullscreen) {
 		XChangeProperty(dpy, c->win, netatom[NetWMState], XA_ATOM, 32,
 			PropModeReplace, (unsigned char*)&netatom[NetWMFullscreen], 1);
+        tmpnmdec(c, TmpNmHookSetFullscreen);
 		c->isfullscreen = 1;
 		c->oldstate = c->isfloating;
 		c->oldbw = c->bw;
@@ -2424,6 +2432,25 @@ tilemove(const Arg *arg)
 }
 
 void
+tmpnmdec(Client *c, int arg)
+{
+    Client *i;
+    int nc, si;
+
+    if (!c || !c->mon || !(tmpnmcfg & arg) || c->isfloating || !ISVISIBLE(c))
+        return;
+
+    for (nc = si = 0, i = nexttiled(c->mon->clients); i; ++nc, i = nexttiled(i->next))
+        if (i == c)
+            si = nc;
+    c->mon->nmaster = c->mon->pertag->nmasters[c->mon->pertag->curtag]
+        = (nc == 1 && (tmpnmcfg & TmpNmRespectNmaster)) ? nmaster
+        : (nc < c->mon->nmaster) ? nc - (nc > MAX(tmpnmdectil, 0))
+        : c->mon->nmaster - (si < c->mon->nmaster
+                && c->mon->nmaster > MAX(tmpnmdectil, 0));
+}
+
+void
 togglebar(const Arg *arg)
 {
 	selmon->showbar = selmon->pertag->showbars[selmon->pertag->curtag] = !selmon->showbar;
@@ -2439,6 +2466,7 @@ togglefloating(const Arg *arg)
 		return;
 	if (selmon->sel->isfullscreen) /* no support for fullscreen windows */
 		return;
+    tmpnmdec(selmon->sel, TmpNmHookToggleFloating);
 	selmon->sel->isfloating = !selmon->sel->isfloating || selmon->sel->isfixed;
 	if (selmon->sel->isfloating) {
         xraycfg(selmon->sel, XrayGrpNone, -1);
@@ -2537,6 +2565,7 @@ unmanage(Client *c, int destroyed)
             if (!i->isfloating && ISVISIBLE(i))
                 nc = i;
 
+    tmpnmdec(c, TmpNmHookUnmanage);
     detach(c);
 	detachstack(c);
 	if (!destroyed) {

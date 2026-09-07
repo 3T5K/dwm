@@ -50,6 +50,15 @@ static const int tilemovecfg
     | TileMoveStackTop
     ;
 
+static const int tmpnmdectil = 0;
+
+static const int tmpnmcfg
+    = TmpNmRespectNmaster
+    | TmpNmHookUnmanage
+    | TmpNmHookToggleFloating
+    ;
+
+
 /* tagging */
 static const char *tags[] = { "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX" };
 
