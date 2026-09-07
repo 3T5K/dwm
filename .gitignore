@@ -1,0 +1,4 @@
+build
+src/config.h
+src/*.orig
+src/*.rej
