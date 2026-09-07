@@ -81,6 +81,11 @@ get-added:
 		| grep '^\([[:digit:]]\|[[:alpha:]]\)\+ added patch:' \
 		| sed 's/added patch//'
 
+get-config:
+	@git log --oneline --root \
+		| grep '^\([[:digit:]]\|[[:alpha:]]\)\+ config:' \
+		| sed 's/config//'
+
 clean:
 	rm -f $(BLD_DIR)/*
 
@@ -105,5 +110,5 @@ install: build
 uninstall:
 	rm -f $(BIN_DIR)/$(EXE) $(MAN_DIR)/$(EXE).1
 
-.PHONY: build dist get-applied get-added clean clean-src clean-all install uninstall
+.PHONY: build dist get-applied get-added get-config clean clean-src clean-all install uninstall
 .DEFAULT_GOAL := build
