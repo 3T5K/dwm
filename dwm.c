@@ -1758,7 +1758,7 @@ tmpnmdec(Client *c, int arg)
     for (nc = si = 0, i = nexttiled(c->mon->clients); i; ++nc, i = nexttiled(i->next))
         if (i == c)
             si = nc;
-    c->mon->nmaster
+    c->mon->nmaster = c->mon->pertag->nmasters[c->mon->pertag->curtag]
         = (nc == 1 && (tmpnmcfg & TmpNmRespectNmaster)) ? nmaster
         : (nc < c->mon->nmaster) ? nc - (nc > MAX(tmpnmdectil, 0))
         : c->mon->nmaster - (si < c->mon->nmaster
