@@ -161,10 +161,14 @@ static void checkotherwm(void);
 static void cleanup(void);
 static void cleanupmon(Monitor *mon);
 static void clientmessage(XEvent *e);
+static void cmove(Client *what, Client *where, int dir);
 static void configure(Client *c);
 static void configurenotify(XEvent *e);
 static void configurerequest(XEvent *e);
+static Client *cprev(Client *c);
+static Client *cprevtiled(Client *c);
 static Monitor *createmon(void);
+static void cswap(Client *x, Client *y);
 static void destroynotify(XEvent *e);
 static void detach(Client *c);
 static void detachstack(Client *c);
@@ -541,6 +545,39 @@ clientmessage(XEvent *e)
 }
 
 void
+cmove(Client *what, Client *where, int dir)
+{
+    Client *pwhat, *pwhere, *nwhat;
+
+    if ( !what || !where || what == where
+         || (!dir && what->next  == where )
+         || ( dir && where->next == what  ) )
+        return;
+
+    pwhat = cprev(what);
+    nwhat = where;
+    if (!dir)
+        pwhere = cprev(where);
+
+    if (pwhat)
+        pwhat->next = what->next;
+    else
+        selmon->clients = what->next;
+
+    if (dir) {
+        nwhat = where->next;
+        where->next = what;
+    } else {
+        if (pwhere)
+            pwhere->next = what;
+        else
+            selmon->clients = what;
+    }
+
+    what->next = nwhat;
+}
+
+void
 configure(Client *c)
 {
 	XConfigureEvent ce;
@@ -639,6 +676,36 @@ configurerequest(XEvent *e)
 	XSync(dpy, False);
 }
 
+Client *
+cprev(Client *c)
+{
+    Client *x, *y;
+
+    if (!c)
+        return NULL;
+
+    for ( x = NULL, y = selmon->clients
+        ; y && y != c
+        ; x = y, y = y->next
+        );
+    return y ? x : y;
+}
+
+Client *
+cprevtiled(Client *c)
+{
+    Client *x, *y;
+
+    if (!c)
+        return NULL;
+
+    for ( x = NULL, y = nexttiled(selmon->clients)
+        ; y && y != c
+        ; x = y, y = nexttiled(y->next)
+        );
+    return y ? x : y;
+}
+
 Monitor *
 createmon(void)
 {
@@ -654,6 +721,32 @@ createmon(void)
 	m->lt[1] = &layouts[1 % LENGTH(layouts)];
 	strncpy(m->ltsymbol, layouts[0].symbol, sizeof m->ltsymbol);
 	return m;
+}
+
+void
+cswap(Client *x, Client *y)
+{
+    Client *i, *px, *py;
+
+    if (!x || !y || x == y)
+        return;
+
+    px = cprev(x);
+    py = cprev(y);
+
+    if (px)
+        px->next = y;
+    if (py)
+        py->next = x;
+
+    i = x->next;
+    x->next = y->next;
+    y->next = i;
+
+    if (selmon->clients == x)
+        selmon->clients = y;
+    else if (selmon->clients == y)
+        selmon->clients = x;
 }
 
 void
