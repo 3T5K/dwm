@@ -11,7 +11,8 @@ static const Layout *layoutring[] = {
 };
 ```
 
-Is null-safe, returns early if `arg` or `arg->v` is `NULL`.
+Is null-safe, returns early if `arg` or `arg->v` is `NULL`. Passing an array
+without a null pointer in it causes UB.
 ```c
 static void cyclebetween(const Arg *arg);
 ```
