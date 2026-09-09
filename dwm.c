@@ -2045,7 +2045,7 @@ tilenmctl(const Arg *arg)
     }
 
     if (!md || !deny) {
-        selmon->nmaster += dir ? 1 : -1;
+        selmon->pertag->nmasters[selmon->pertag->curtag] = selmon->nmaster += dir ? 1 : -1;
         if (!(arg->i & TileNmCtlNoArrange))
             arrange(selmon);
     }
