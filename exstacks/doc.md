@@ -36,6 +36,11 @@ With xray, adding a window to an expanded area will not make it the expanded
 one unless it is focused. This can occur when invoking `incnmaster` while not
 focused on the client that would be moved to the other area.
 
+Example binding in `keys`:
+```c
+{ MODKEY, XK_x, exstack, {0} },
+```
+
 ## patch files
 
 The following diffs do not include the other patches, those must be applied
