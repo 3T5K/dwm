@@ -18,7 +18,7 @@ enum {
 };
 ```
 
-Example binds in `keys`:
+Example bindings in `keys`:
 ```c
 { MODKEY,           XK_w, cyclefocus, {.i = CyclePrev | CycleTiled    } },
 { MODKEY,           XK_e, cyclefocus, {.i = CycleNext | CycleTiled    } },
@@ -28,6 +28,7 @@ Example binds in `keys`:
 
 ## patch files
 
+### cyclefocus-6.8
 ```sh
 git diff 6.8..cyclefocus-6.8 > dwm-cyclefocus-6.8.diff
 ```
