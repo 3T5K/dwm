@@ -1,0 +1,89 @@
+diff --git a/config.def.h b/config.def.h
+index 81c3fc0..2658333 100644
+--- a/config.def.h
++++ b/config.def.h
+@@ -86,6 +86,7 @@ static const Key keys[] = {
+ 	{ MODKEY,                       XK_period, focusmon,       {.i = +1 } },
+ 	{ MODKEY|ShiftMask,             XK_comma,  tagmon,         {.i = -1 } },
+ 	{ MODKEY|ShiftMask,             XK_period, tagmon,         {.i = +1 } },
++        { MODKEY|ShiftMask,             XK_apostrophe,  swapmon,   {0} },
+ 	TAGKEYS(                        XK_1,                      0)
+ 	TAGKEYS(                        XK_2,                      1)
+ 	TAGKEYS(                        XK_3,                      2)
+diff --git a/dwm.c b/dwm.c
+index 53b9d4a..a5e15dc 100644
+--- a/dwm.c
++++ b/dwm.c
+@@ -234,6 +234,7 @@ static int xerror(Display *dpy, XErrorEvent *ee);
+ static int xerrordummy(Display *dpy, XErrorEvent *ee);
+ static int xerrorstart(Display *dpy, XErrorEvent *ee);
+ static void zoom(const Arg *arg);
++static void swapmon(const Arg *arg);
+ 
+ /* variables */
+ static const char broken[] = "broken";
+@@ -2216,6 +2217,64 @@ zoom(const Arg *arg)
+ 	pop(c);
+ }
+ 
++void
++swapmon(const Arg *arg)
++{
++    Monitor *m1, *m2, *i;
++
++    if (mons->next == NULL)
++        return;
++
++    m1 = mons;
++    m2 = mons->next;
++
++    unsigned int tmp = m1->tagset[m1->seltags];
++    m1->tagset[m1->seltags] = m2->tagset[m2->seltags];
++    m2->tagset[m2->seltags] = tmp;
++
++    const Layout *tmp_lt[2] = { m1->lt[0], m1->lt[1] };
++    m1->lt[0] = m2->lt[0];
++    m1->lt[1] = m2->lt[1];
++    m2->lt[0] = tmp_lt[0];
++    m2->lt[1] = tmp_lt[1];
++
++    Client *c;
++    for (c = m1->clients; c; c = c->next)
++        c->mon = m2;
++    for (c = m2->clients; c; c = c->next)
++        c->mon = m1;
++
++#define SWAP_(type, member) \
++    type tmp_##member = m1->member; \
++    m1->member = m2->member; \
++    m2->member = tmp_##member;
++
++    SWAP_(Client *, clients);
++    SWAP_(Client *, stack);
++    SWAP_(Pertag *, pertag);
++    SWAP_(Client *, sel);
++    SWAP_(int, showbar);
++    SWAP_(int, topbar);
++    SWAP_(float, mfact);
++    SWAP_(int, nmaster);
++    SWAP_(unsigned int, sellt);
++
++#undef SWAP_
++
++    focus(NULL);
++    for (i = mons; i; i = i->next) {
++        updatebarpos(i);
++        XMoveResizeWindow( dpy
++                         , i->barwin
++                         , i->wx
++                         , i->by
++                         , i->ww
++                         , bh
++                         );
++        arrange(i);
++    }
++}
++
+ int
+ main(int argc, char *argv[])
+ {
