@@ -1,0 +1,79 @@
+diff --git a/config.def.h b/config.def.h
+index 4b07e6b..f1e61d5 100644
+--- a/config.def.h
++++ b/config.def.h
+@@ -2,6 +2,8 @@
+ 
+ /* appearance */
+ static const unsigned int borderpx  = 1;        /* border pixel of windows */
++static const unsigned int ogap      = 30;       /* gap on outer edges */
++static const unsigned int igap      = 10;       /* gap between windows */
+ static const unsigned int snap      = 32;       /* snap pixel */
+ static const int showbar            = 1;        /* 0 means no bar */
+ static const int topbar             = 1;        /* 0 means bottom bar */
+diff --git a/dwm.c b/dwm.c
+index c8463e2..bc4029a 100644
+--- a/dwm.c
++++ b/dwm.c
+@@ -1716,29 +1716,48 @@ tagmon(const Arg *arg)
+ void
+ tile(Monitor *m)
+ {
+-	unsigned int i, n, h, mw, my, ty;
++	unsigned int i, n, h, mw, my, ty, ns;
+ 	Client *c;
+ 
+ 	for (n = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), n++);
+ 	if (n == 0)
+ 		return;
+ 
+-	if (n > m->nmaster)
++	if (n > m->nmaster) {
+ 		mw = m->nmaster ? m->ww * m->mfact : 0;
+-	else
++		ns = m->nmaster > 0 ? 2 : 1;
++	} else {
+ 		mw = m->ww;
++		ns = 1;
++	}
+ 	for (i = my = ty = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), i++)
+-		if (i < m->nmaster) {
+-			h = m->stacks.master ? m->wh : (m->wh - my) / (MIN(n, m->nmaster) - i);
+-            resize(c, m->wx, m->wy + my * !m->stacks.master, mw - (2*c->bw), h - (2*c->bw), 0);
+-			if (my + HEIGHT(c) < m->wh)
+-				my += HEIGHT(c);
++        if (i < m->nmaster) {
++            h = m->stacks.master
++                ? m->wh - 2 * ogap
++                : (m->wh - 2 * ogap + igap - my) / (MIN(n, m->nmaster) - i);
++            resize( c
++                  , m->wx + ogap
++                  , m->wy + ogap + my * !m->stacks.master
++                  , mw - (ns ^ 3) * ogap - 2 * c->bw - (ns - 1) * (igap / 2)
++                  , h - 2 * c->bw - igap * !m->stacks.master
++                  , False
++                  );
++            if (my + HEIGHT(c) + igap < m->wh - 2 * ogap)
++                my += HEIGHT(c) + igap;
+         } else {
+-			h = m->stacks.stack ? m->wh : (m->wh - ty) / (n - i);
+-			resize(c, m->wx + mw, m->wy + ty * !m->stacks.stack, m->ww - mw - (2*c->bw), h - (2*c->bw), 0);
+-			if (ty + HEIGHT(c) < m->wh)
+-				ty += HEIGHT(c);
+-		}
++        h = m->stacks.stack
++            ? m->wh - 2 * ogap
++            : (m->wh - 2 * ogap + igap - ty) / (n - i);
++        resize( c
++              , m->wx + (ns & 1) * ogap + mw + (ns - 1) * (igap / 2)
++              , m->wy + ogap + ty * !m->stacks.stack
++              , m->ww - (ns ^ 3) * ogap - mw - 2 * c->bw - (ns - 1) * (igap / 2)
++              , h - 2 * c->bw - igap * !m->stacks.stack
++              , False
++              );
++        if (ty + HEIGHT(c) + igap < m->wh - 2 * ogap)
++            ty += HEIGHT(c) + igap;
++        }
+ }
+ 
+ void
