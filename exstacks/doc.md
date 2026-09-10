@@ -23,7 +23,18 @@ Invoking `exstack` would retile everything to:
 |          |      |
 +----------+------+
 ```
-The same behavior applies to the master area when a client in it is focused.
+The same behavior applies to the master area when a client in it is focused and
+`exstacks` is called.
+
+By default, the clients are stacked in front of each other. When using
+transparent windows, other clients from that area can be seen underneath them
+instead of the wallpaper, for example. The exstacks xray integration patch
+should be used if sending every window except the "expanded" one off-screen is
+desired.
+
+With xray, adding a window to an expanded area will not make it the expanded
+one unless it is focused. This can occur when invoking `incnmaster` while not
+focused on the client that would be moved to the other area.
 
 ## patch files
 

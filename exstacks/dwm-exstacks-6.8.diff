@@ -1,0 +1,99 @@
+diff --git a/config.def.h b/config.def.h
+index 81c3fc0..4b07e6b 100644
+--- a/config.def.h
++++ b/config.def.h
+@@ -72,6 +72,7 @@ static const Key keys[] = {
+ 	{ MODKEY,                       XK_d,      incnmaster,     {.i = -1 } },
+ 	{ MODKEY,                       XK_h,      setmfact,       {.f = -0.05} },
+ 	{ MODKEY,                       XK_l,      setmfact,       {.f = +0.05} },
++    { MODKEY,                       XK_x,      exstack,        {0} },
+ 	{ MODKEY,                       XK_Return, zoom,           {0} },
+ 	{ MODKEY,                       XK_Tab,    view,           {0} },
+ 	{ MODKEY|ShiftMask,             XK_c,      killclient,     {0} },
+diff --git a/dwm.c b/dwm.c
+index 53b393e..c8463e2 100644
+--- a/dwm.c
++++ b/dwm.c
+@@ -98,6 +98,11 @@ struct Client {
+ 	Window win;
+ };
+ 
++typedef struct {
++    int master;
++    int stack;
++} ExStack;
++
+ typedef struct {
+ 	unsigned int mod;
+ 	KeySym keysym;
+@@ -129,6 +134,7 @@ struct Monitor {
+ 	Monitor *next;
+ 	Window barwin;
+ 	const Layout *lt[2];
++    ExStack stacks;
+ };
+ 
+ typedef struct {
+@@ -164,6 +170,7 @@ static void drawbar(Monitor *m);
+ static void drawbars(void);
+ static void enternotify(XEvent *e);
+ static void expose(XEvent *e);
++static void exstack(const Arg *arg);
+ static void focus(Client *c);
+ static void focusin(XEvent *e);
+ static void focusmon(const Arg *arg);
+@@ -642,6 +649,8 @@ createmon(void)
+ 	m->topbar = topbar;
+ 	m->lt[0] = &layouts[0];
+ 	m->lt[1] = &layouts[1 % LENGTH(layouts)];
++    m->stacks.master = 0;
++    m->stacks.stack = 0;
+ 	strncpy(m->ltsymbol, layouts[0].symbol, sizeof m->ltsymbol);
+ 	return m;
+ }
+@@ -785,6 +794,26 @@ expose(XEvent *e)
+ 		drawbar(m);
+ }
+ 
++void
++exstack(const Arg *arg)
++{
++    Client *c;
++    int n;
++
++    if (selmon->lt[selmon->sellt]->arrange != &tile
++            || !selmon->sel || selmon->sel->isfloating)
++        return;
++
++    for (n = 0, c = nexttiled(selmon->clients); c && selmon->sel != c; c = nexttiled(c->next), ++n);
++
++    if (n < selmon->nmaster)
++        selmon->stacks.master = !selmon->stacks.master;
++    else
++        selmon->stacks.stack = !selmon->stacks.stack;
++
++    arrange(selmon);
++}
++
+ void
+ focus(Client *c)
+ {
+@@ -1700,13 +1729,13 @@ tile(Monitor *m)
+ 		mw = m->ww;
+ 	for (i = my = ty = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), i++)
+ 		if (i < m->nmaster) {
+-			h = (m->wh - my) / (MIN(n, m->nmaster) - i);
+-			resize(c, m->wx, m->wy + my, mw - (2*c->bw), h - (2*c->bw), 0);
++			h = m->stacks.master ? m->wh : (m->wh - my) / (MIN(n, m->nmaster) - i);
++            resize(c, m->wx, m->wy + my * !m->stacks.master, mw - (2*c->bw), h - (2*c->bw), 0);
+ 			if (my + HEIGHT(c) < m->wh)
+ 				my += HEIGHT(c);
+-		} else {
+-			h = (m->wh - ty) / (n - i);
+-			resize(c, m->wx + mw, m->wy + ty, m->ww - mw - (2*c->bw), h - (2*c->bw), 0);
++        } else {
++			h = m->stacks.stack ? m->wh : (m->wh - ty) / (n - i);
++			resize(c, m->wx + mw, m->wy + ty * !m->stacks.stack, m->ww - mw - (2*c->bw), h - (2*c->bw), 0);
+ 			if (ty + HEIGHT(c) < m->wh)
+ 				ty += HEIGHT(c);
+ 		}
