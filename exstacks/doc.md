@@ -43,7 +43,7 @@ Example binding in `keys`:
 
 ## patch files
 
-The following diffs do not include the other patches, those must be applied
+The following diffs do not include the other patches. Those must be applied
 separately.
 
 ### exstacks-6.8
