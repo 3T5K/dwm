@@ -13,7 +13,7 @@ https://dwm.suckless.org/patches/tilegap/
 
 ## patch files
 
-The following diffs do not include the other patches, those must be applied
+The following diffs do not include the other patches. Those must be applied
 separately.
 
 ### iogaps-6.8
