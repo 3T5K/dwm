@@ -37,6 +37,7 @@ static void cswap(Client *x, Client *y);
 
 ## patch files
 
+### cutils-6.8
 ```sh
 git diff 6.8..cutils-6.8 > dwm-cutils-6.8.diff
 ```
