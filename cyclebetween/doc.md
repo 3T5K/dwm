@@ -17,7 +17,7 @@ without a null pointer in it causes UB.
 static void cyclebetween(const Arg *arg);
 ```
 
-Example binds in `keys`:
+Example binding in `keys`:
 ```c
 { MODKEY, XK_c, cyclebetween, {.v = layoutring } },
 ```
