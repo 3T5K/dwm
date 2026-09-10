@@ -32,6 +32,7 @@ more. Focus would fall back as follows: s1 -> s2 -> s3 -> m3 -> m2 -> m1.
 
 ## patch files
 
+### intuitivefocus-6.8
 ```sh
 git diff 6.8..intuitivefocus-6.8 > dwm-intuitivefocus-6.8.diff
 ```
