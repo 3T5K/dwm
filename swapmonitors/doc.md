@@ -16,7 +16,7 @@ Swapped fields:
 - `nmaster`
 - `sellt`
 
-Example binds in `keys`:
+Example binding in `keys`:
 ```c
 { MODKEY|ShiftMask, XK_apostrophe, swapmon, {0} },
 ```
