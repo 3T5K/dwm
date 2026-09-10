@@ -1,6 +1,6 @@
 # swapmonitors
 
-Swaps states of two monitors. This is an extension of swapmonitors (4cd2832)
+Swaps the states of two monitors. This is an extension of swapmonitors (4cd2832)
 with support for pertag and swapping some additional fields.
 
 Swapped fields:
