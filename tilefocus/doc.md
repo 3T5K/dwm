@@ -63,7 +63,8 @@ client was focused more recently than the expanded one. Although exstacks would
 not make this client the expanded one, changing focus to that area with the
 configuration set to last focused would focus this client instead of the
 expanded one. To change this behavior, use the exstacks-xray compatibility
-patch.
+patch. Note that this patch is pertag-agnostic and will work when applied to an
+exstacks-pertag-xray patched tree.
 
 Two new enumerators for `tilefocuscfg` are added:
 ```c
