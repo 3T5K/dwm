@@ -1,6 +1,6 @@
 # cutils
 
-Provides some basic singly-linked list operations for the `selmon->clients`.
+Provides some basic singly-linked list operations for `selmon->clients`.
 
 ## cmove
 
