@@ -1,0 +1,34 @@
+diff --git a/dwm.c b/dwm.c
+index 53b393e..b62631f 100644
+--- a/dwm.c
++++ b/dwm.c
+@@ -1778,9 +1778,20 @@ unfocus(Client *c, int setfocus)
+ void
+ unmanage(Client *c, int destroyed)
+ {
++    Client *nc, *i;
+ 	Monitor *m = c->mon;
+ 	XWindowChanges wc;
+ 
++    if (c->isfloating)
++        for ( nc = m->stack
++            ; nc && (!nc->isfloating || !ISVISIBLE(nc) || nc == c)
++            ; nc = nc->snext
++            );
++    else if (!(nc = nexttiled(c->next)))
++        for (i = m->clients; i != c; i = i->next)
++            if (!i->isfloating && ISVISIBLE(i))
++                nc = i;
++
+ 	detach(c);
+ 	detachstack(c);
+ 	if (!destroyed) {
+@@ -1796,7 +1807,7 @@ unmanage(Client *c, int destroyed)
+ 		XUngrabServer(dpy);
+ 	}
+ 	free(c);
+-	focus(NULL);
++	focus(nc);
+ 	updateclientlist();
+ 	arrange(m);
+ }
