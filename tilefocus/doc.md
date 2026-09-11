@@ -81,15 +81,24 @@ expanded.
 
 ## patch files
 
-The following diffs do not include the other patches. Those must be applied
+The following diffs do not include their dependencies. Those must be applied
 separately.
 
-### tilefocus-6.8 + tileinfo-6.8
+### tilefocus-6.8
+**Dependencies:**
+- tileinfo-6.8
+
 ```sh
 git diff tileinfo-6.8..tilefocus-6.8 > dwm-tilefocus-6.8.diff
 ```
 
-### tilefocus-6.8 + tileinfo-exstacks-xray-6.8 + exstacks-xray-6.8
+### tilefocus-exstacks-xray-6.8
+**Dependencies:**
+- tileinfo-exstacks-xray-6.8
+- exstacks-xray-6.8 or exstacks-pertag-xray-6.8
+- pertag-61bb8b2 (required when using exstacks-pertag-xray-6.8)
+- xray-6.8
+
 ```sh
 git diff tileinfo-exstacks-xray-6.8..tilefocus-exstacks-xray-6.8 > dwm-tilefocus-exstacks-xray-6.8.diff
 ```
