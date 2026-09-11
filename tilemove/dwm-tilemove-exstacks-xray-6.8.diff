@@ -32,7 +32,7 @@ index 4b07e6b..2048edc 100644
  	{ MODKEY,                       XK_l,      setmfact,       {.f = +0.05} },
      { MODKEY,                       XK_x,      exstack,        {0} },
 diff --git a/dwm.c b/dwm.c
-index 6d95f8a..2b9fac9 100644
+index a51302b..e0ecd4b 100644
 --- a/dwm.c
 +++ b/dwm.c
 @@ -67,6 +67,16 @@ enum { ClkTagBar, ClkLtSymbol, ClkStatusText, ClkWinTitle,
