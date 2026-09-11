@@ -30,7 +30,7 @@ Client *xs[2]; /* xs[0]: master XrayAc xs[1]: stack XrayAc */
 
 ## patch files
 
-The second diff doesn't include exstacks-xray. That patch must be applied
+The following diffs do not include their dependencies. Those must be applied
 separately.
 
 ### tileinfo-6.8
@@ -38,7 +38,12 @@ separately.
 git diff 6.8..tileinfo-6.8 > dwm-tileinfo-6.8.diff
 ```
 
-### tileinfo-6.8 + exstacks-xray-6.8
+### tileinfo-exstacks-xray-6.8
+**Dependencies:**
+- exstacks-xray-6.8 or exstacks-pertag-xray-6.8
+- pertag-61bb8b2 (required when using exstacks-pertag-xray-6.8)
+- xray-6.8
+
 ```sh
 git diff exstacks-xray-6.8..tileinfo-exstacks-xray-6.8 > dwm-tileinfo-exstacks-xray-6.8.diff
 ```
