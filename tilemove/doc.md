@@ -57,25 +57,47 @@ enum {
 
 ## patch files
 
-The following diffs do not include the other patches. Those must be applied
+The following diffs do not include their dependencies. Those must be applied
 separately.
 
-### tilemove-6.8 + cutils-6.8 + tileinfo-6.8
+### tilemove-6.8
+**Dependencies:**
+- cutils-6.8
+- tileinfo-6.8
+
 ```sh
 git diff tilemove-6.8^..tilemove-6.8 > dwm-tilemove-6.8.diff
 ```
 
-### tilemove-6.8 + cutils-6.8 + tileinfo-6.8 + pertag-61bb8b2
+### tilemove-pertag-6.8
+**Dependencies:**
+- cutils-6.8
+- tileinfo-6.8
+- pertag-61bb8b2
+
 ```sh
 git diff tilemove-pertag-6.8^^..tilemove-pertag-6.8 > dwm-tilemove-pertag-6.8.diff
 ```
 
-### tilemove-6.8 + cutils-6.8 + tileinfo-exstacks-xray-6.8 + exstacks-xray-6.8
+### tilemove-exstacks-xray-6.8
+**Dependencies:**
+- cutils-6.8
+- tileinfo-exstacks-xray-6.8
+- exstacks-xray-6.8
+- xray-6.8
+
 ```sh
 git diff tilemove-exstacks-xray-6.8^^..tilemove-exstacks-xray-6.8 > dwm-tilemove-exstacks-xray-6.8.diff
 ```
 
-### tilemove-6.8 + cutils-6.8 + tileinfo-exstacks-xray-6.8 + exstacks-pertag-xray-6.8
+### tilemove-exstacks-pertag-xray-6.8
+**Dependencies:**
+- cutils-6.8
+- tileinfo-exstacks-xray-6.8
+- exstacks-pertag-xray-6.8
+- pertag-61bb8b2
+- xray-6.8
+
 ```sh
 git diff tilemove-exstacks-pertag-xray-6.8^^^...tilemove-exstacks-pertag-xray-6.8 > dwm-tilemove-exstacks-pertag-xray-6.8.diff
 ```
