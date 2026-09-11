@@ -37,11 +37,13 @@ The following diffs do not include their dependencies. Those must be applied
 separately.
 
 ### tmpnmaster-6.8
+
 ```sh
 git diff 6.8..tmpnmaster-6.8 > dwm-tmpnmaster-6.8.diff
 ```
 
 ### tmpnmaster-pertag-6.8
+
 **Dependencies:**
 - pertag-61bb8b2
 
