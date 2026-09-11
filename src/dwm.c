@@ -338,6 +338,7 @@ static void xrayfocus(Client *c);
 static void xraymaybefallback(int grp);
 static void xrayunfocus(Client *c);
 static void zoom(const Arg *arg);
+static void swapmon(const Arg *arg);
 static void autostart_exec(void);
 
 /* variables */
@@ -3272,6 +3273,64 @@ zoom(const Arg *arg)
 	if (c == nexttiled(selmon->clients) && !(c = nexttiled(c->next)))
 		return;
 	pop(c);
+}
+
+void
+swapmon(const Arg *arg)
+{
+    Monitor *m1, *m2, *i;
+
+    if (mons->next == NULL)
+        return;
+
+    m1 = mons;
+    m2 = mons->next;
+
+    unsigned int tmp = m1->tagset[m1->seltags];
+    m1->tagset[m1->seltags] = m2->tagset[m2->seltags];
+    m2->tagset[m2->seltags] = tmp;
+
+    const Layout *tmp_lt[2] = { m1->lt[0], m1->lt[1] };
+    m1->lt[0] = m2->lt[0];
+    m1->lt[1] = m2->lt[1];
+    m2->lt[0] = tmp_lt[0];
+    m2->lt[1] = tmp_lt[1];
+
+    Client *c;
+    for (c = m1->clients; c; c = c->next)
+        c->mon = m2;
+    for (c = m2->clients; c; c = c->next)
+        c->mon = m1;
+
+#define SWAP_(type, member) \
+    type tmp_##member = m1->member; \
+    m1->member = m2->member; \
+    m2->member = tmp_##member;
+
+    SWAP_(Client *, clients);
+    SWAP_(Client *, stack);
+    SWAP_(Pertag *, pertag);
+    SWAP_(Client *, sel);
+    SWAP_(int, showbar);
+    SWAP_(int, topbar);
+    SWAP_(float, mfact);
+    SWAP_(int, nmaster);
+    SWAP_(unsigned int, sellt);
+
+#undef SWAP_
+
+    focus(NULL);
+    for (i = mons; i; i = i->next) {
+        updatebarpos(i);
+        XMoveResizeWindow( dpy
+                         , i->barwin
+                         , i->wx + sp
+                         , i->by + vp
+                         , i->ww - 2 * sp
+                         , bh
+                         );
+        arrange(i);
+    }
 }
 
 int
