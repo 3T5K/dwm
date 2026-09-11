@@ -39,6 +39,17 @@ static const int tilefocuscfg
     | TileFocusHorzOverflow
     ;
 
+static const TileMoveCallback tilemovefallback = NULL;
+
+static const int tilemovecfg
+    = TileMoveVertOverflow
+    | TileMoveHorzOverflow
+    | TileMoveMasterXDeny
+    | TileMoveMasterBottom
+    | TileMoveStackXDeny
+    | TileMoveStackTop
+    ;
+
 /* tagging */
 static const char *tags[] = { "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX" };
 

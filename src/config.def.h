@@ -44,6 +44,17 @@ static const int tilefocuscfg
     | TileFocusHorzOverflow
     ;
 
+static const TileMoveCallback tilemovefallback = NULL;
+
+static const int tilemovecfg
+    = TileMoveVertOverflow
+    | TileMoveHorzOverflow
+    | TileMoveMasterXDeny
+    | TileMoveMasterBottom
+    | TileMoveStackXDeny
+    | TileMoveStackTop
+    ;
+
 /* tagging */
 static const char *tags[] = { "1", "2", "3", "4", "5", "6", "7", "8", "9" };
 
@@ -108,8 +119,12 @@ static const Key keys[] = {
     { MODKEY,                       XK_l,      tilefocus,      {.i = 'E' } },
 	{ MODKEY,                       XK_i,      incnmaster,     {.i = +1 } },
 	{ MODKEY,                       XK_d,      incnmaster,     {.i = -1 } },
-	{ MODKEY|ShiftMask,             XK_h,      setmfact,       {.f = -0.05} },
-	{ MODKEY|ShiftMask,             XK_l,      setmfact,       {.f = +0.05} },
+    { MODKEY|ShiftMask,             XK_h,      tilemove,       {.i = 'W' } },
+    { MODKEY|ShiftMask,             XK_j,      tilemove,       {.i = 'S' } },
+    { MODKEY|ShiftMask,             XK_k,      tilemove,       {.i = 'N' } },
+    { MODKEY|ShiftMask,             XK_l,      tilemove,       {.i = 'E' } },
+	{ MODKEY|ControlMask,           XK_h,      setmfact,       {.f = -0.05} },
+	{ MODKEY|ControlMask,           XK_l,      setmfact,       {.f = +0.05} },
     { MODKEY,                       XK_x,      exstack,        {0} },
 	{ MODKEY,                       XK_Return, zoom,           {0} },
 	{ MODKEY,                       XK_Tab,    view,           {0} },
