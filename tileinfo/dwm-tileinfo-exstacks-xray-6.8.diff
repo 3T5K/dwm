@@ -1,5 +1,5 @@
 diff --git a/dwm.c b/dwm.c
-index 2ec4927..b8f6c6d 100644
+index 4e8c806..8fcc457 100644
 --- a/dwm.c
 +++ b/dwm.c
 @@ -149,6 +149,16 @@ typedef struct {
