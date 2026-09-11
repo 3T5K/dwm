@@ -85,6 +85,7 @@ The following diffs do not include their dependencies. Those must be applied
 separately.
 
 ### tilefocus-6.8
+
 **Dependencies:**
 - tileinfo-6.8
 
@@ -93,6 +94,7 @@ git diff tileinfo-6.8..tilefocus-6.8 > dwm-tilefocus-6.8.diff
 ```
 
 ### tilefocus-exstacks-xray-6.8
+
 **Dependencies:**
 - tileinfo-exstacks-xray-6.8
 - exstacks-xray-6.8 or exstacks-pertag-xray-6.8
