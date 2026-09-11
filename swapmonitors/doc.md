@@ -38,3 +38,13 @@ separately.
 ```sh
 git diff swapmonitors-pertag-6.8^^..swapmonitors-pertag-6.8 > dwm-swapmonitors-pertag-6.8.diff
 ```
+
+### swapmonitors-pertag-barpadding-6.8
+
+**Dependencies:**
+- pertag-61bb8b2
+- barpadding-6.6
+
+```sh
+git diff swapmonitors-pertag-barpadding-6.8^^^..swapmonitors-pertag-barpadding-6.8 > dwm-swapmonitors-pertag-barpadding-6.8.diff
+```
