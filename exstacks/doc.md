@@ -47,11 +47,13 @@ The following diffs do not include their dependencies. Those must be applied
 separately.
 
 ### exstacks-6.8
+
 ```sh
 git diff 6.8..exstacks-6.8 > dwm-exstacks-6.8.diff
 ```
 
 ### exstacks-pertag-6.8
+
 **Dependencies:**
 - pertag-61bb8b2
 
@@ -60,6 +62,7 @@ git diff exstacks-pertag-6.8^..exstacks-pertag-6.8 > dwm-exstacks-pertag-6.8.dif
 ```
 
 ### exstacks-xray-6.8
+
 **Dependencies:**
 - xray-6.8
 
@@ -68,6 +71,7 @@ git diff xray-6.8..exstacks-xray-6.8 > dwm-exstacks-xray-6.8.diff
 ```
 
 ### exstacks-pertag-xray-6.8
+
 **Dependencies:**
 - pertag-61bb8b2
 - xray-6.8
