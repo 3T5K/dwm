@@ -12,7 +12,7 @@ index 4b07e6b..f1e61d5 100644
  static const int showbar            = 1;        /* 0 means no bar */
  static const int topbar             = 1;        /* 0 means bottom bar */
 diff --git a/dwm.c b/dwm.c
-index f35d8b5..f1cb8c9 100644
+index 7317b5b..45beaca 100644
 --- a/dwm.c
 +++ b/dwm.c
 @@ -1772,7 +1772,7 @@ tagmon(const Arg *arg)
@@ -25,7 +25,7 @@ index f35d8b5..f1cb8c9 100644
      int em = m->pertag->exstacks[m->pertag->curtag].master
        , es = m->pertag->exstacks[m->pertag->curtag].stack;
 @@ -1793,29 +1793,44 @@ tile(Monitor *m)
-     if (!m->sel->isfloating)
+     if (m->sel && !m->sel->isfloating)
          xr[si >= m->nmaster] = m->sel;
  
 -    if (n > m->nmaster)
