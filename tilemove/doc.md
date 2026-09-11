@@ -61,6 +61,7 @@ The following diffs do not include their dependencies. Those must be applied
 separately.
 
 ### tilemove-6.8
+
 **Dependencies:**
 - cutils-6.8
 - tileinfo-6.8
@@ -70,6 +71,7 @@ git diff tilemove-6.8^..tilemove-6.8 > dwm-tilemove-6.8.diff
 ```
 
 ### tilemove-pertag-6.8
+
 **Dependencies:**
 - cutils-6.8
 - tileinfo-6.8
@@ -80,6 +82,7 @@ git diff tilemove-pertag-6.8^^..tilemove-pertag-6.8 > dwm-tilemove-pertag-6.8.di
 ```
 
 ### tilemove-exstacks-xray-6.8
+
 **Dependencies:**
 - cutils-6.8
 - tileinfo-exstacks-xray-6.8
@@ -91,6 +94,7 @@ git diff tilemove-exstacks-xray-6.8^^..tilemove-exstacks-xray-6.8 > dwm-tilemove
 ```
 
 ### tilemove-exstacks-pertag-xray-6.8
+
 **Dependencies:**
 - cutils-6.8
 - tileinfo-exstacks-xray-6.8
