@@ -98,6 +98,9 @@ Example bindings in `keys`:
 
 ## patch files
 
+The following diffs do not include their dependencies. Those must be applied
+separately.
+
 ### tilenmctl-6.8
 **Dependencies:**
 - cutils-6.8
@@ -114,8 +117,8 @@ git diff tilenmctl-6.8^..tilenmctl-6.8 > dwm-tilenmctl-6.8.diff
 - cutils-6.8
 - tileinfo-exstacks-xray-6.8
 - exstacks-pertag-xray-6.8
-- xray-6.8
 - pertag-61bb8b2
+- xray-6.8
 
 ```sh
 git diff tilenmctl-pertag-6.8^^..tilenmctl-pertag-6.8 > dwm-tilenmctl-pertag-6.8.diff
