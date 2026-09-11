@@ -43,7 +43,7 @@ Example binding in `keys`:
 
 ## patch files
 
-The following diffs do not include the other patches. Those must be applied
+The following diffs do not include their dependencies. Those must be applied
 separately.
 
 ### exstacks-6.8
@@ -51,17 +51,27 @@ separately.
 git diff 6.8..exstacks-6.8 > dwm-exstacks-6.8.diff
 ```
 
-### exstacks-6.8 + pertag-61bb8b2
+### exstacks-pertag-6.8
+**Dependencies:**
+- pertag-61bb8b2
+
 ```sh
 git diff exstacks-pertag-6.8^..exstacks-pertag-6.8 > dwm-exstacks-pertag-6.8.diff
 ```
 
-### exstacks-6.8 + xray-6.8
+### exstacks-xray-6.8
+**Dependencies:**
+- xray-6.8
+
 ```sh
 git diff xray-6.8..exstacks-xray-6.8 > dwm-exstacks-xray-6.8.diff
 ```
 
-### exstacks-6.8 + pertag-61bb8b2 + xray-6.8
+### exstacks-pertag-xray-6.8
+**Dependencies:**
+- pertag-61bb8b2
+- xray-6.8
+
 ```sh
 git diff exstacks-pertag-xray-6.8^^..exstacks-pertag-xray-6.8 > dwm-exstacks-pertag-xray-6.8.diff
 ```
