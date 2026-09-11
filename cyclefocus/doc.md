@@ -29,6 +29,7 @@ Example bindings in `keys`:
 ## patch files
 
 ### cyclefocus-6.8
+
 ```sh
 git diff 6.8..cyclefocus-6.8 > dwm-cyclefocus-6.8.diff
 ```
