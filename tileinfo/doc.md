@@ -34,11 +34,13 @@ The following diffs do not include their dependencies. Those must be applied
 separately.
 
 ### tileinfo-6.8
+
 ```sh
 git diff 6.8..tileinfo-6.8 > dwm-tileinfo-6.8.diff
 ```
 
 ### tileinfo-exstacks-xray-6.8
+
 **Dependencies:**
 - exstacks-xray-6.8 or exstacks-pertag-xray-6.8
 - pertag-61bb8b2 (required when using exstacks-pertag-xray-6.8)
