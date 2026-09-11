@@ -41,7 +41,7 @@ index 4b07e6b..2e48ed1 100644
  	{ MODKEY,                       XK_Return, zoom,           {0} },
  	{ MODKEY,                       XK_Tab,    view,           {0} },
 diff --git a/dwm.c b/dwm.c
-index b8f6c6d..418ab65 100644
+index 8fcc457..f1d63e3 100644
 --- a/dwm.c
 +++ b/dwm.c
 @@ -67,6 +67,18 @@ enum { ClkTagBar, ClkLtSymbol, ClkStatusText, ClkWinTitle,
