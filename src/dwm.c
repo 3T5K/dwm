@@ -102,6 +102,23 @@ enum {
     TmpNmHookToggleFloating = 1 << 2,
     TmpNmHookSetFullscreen  = 1 << 3,
 };
+enum {
+    TileNmCtlDec       = 1 << 0,
+    TileNmCtlInc       = 1 << 1,
+    TileNmCtlNoArrange = 1 << 2,
+};
+enum {
+    TileNmCtlMasterDefer   = 1 << 0,
+    TileNmCtlMasterPrefer  = 1 << 1,
+    TileNmCtlMasterNone    = 1 << 2,
+    TileNmCtlMasterAndDeny = 1 << 3,
+    TileNmCtlMasterNoMove  = 1 << 4,
+    TileNmCtlStackDefer    = 1 << 5,
+    TileNmCtlStackPrefer   = 1 << 6,
+    TileNmCtlStackNone     = 1 << 7,
+    TileNmCtlStackAndDeny  = 1 << 8,
+    TileNmCtlStackNoMove   = 1 << 9,
+};
 
 typedef union {
 	int i;
@@ -200,6 +217,8 @@ typedef void(*TileFocusCallback)(const Arg *);
 
 typedef void (*TileMoveCallback)(const Arg *);
 
+typedef void(*TileNmCtlCallback)(const Arg *);
+
 /* function declarations */
 static void applyrules(Client *c);
 static int applysizehints(Client *c, int *x, int *y, int *w, int *h, int interact);
@@ -281,6 +300,8 @@ static void tilefocus(const Arg *arg);
 static void tilefocusdefaultfallback(const Arg *arg);
 static TileInfo tileinfo(void);
 static void tilemove(const Arg *arg);
+static void tilenmctl(const Arg *arg);
+static void tilenmctldefaultfallback(const Arg *arg);
 static void tmpnmdec(Client *c, int arg);
 static void togglebar(const Arg *arg);
 static void togglefloating(const Arg *arg);
@@ -2448,6 +2469,79 @@ tmpnmdec(Client *c, int arg)
         : (nc < c->mon->nmaster) ? nc - (nc > MAX(tmpnmdectil, 0))
         : c->mon->nmaster - (si < c->mon->nmaster
                 && c->mon->nmaster > MAX(tmpnmdectil, 0));
+}
+
+void
+tilenmctl(const Arg *arg)
+{
+    TileInfo ti;
+    Client **bsts[2] = { ti.bs, ti.ts };
+    int mm, ms, ma, mn, md, dir, deny;
+
+    if (selmon->lt[selmon->sellt]->arrange != &tile) {
+        if (tilenmctlfallback)
+            tilenmctlfallback(arg);
+        return;
+    }
+
+    if (!arg)
+        return;
+
+    mm = tilenmctlcfg & (TileNmCtlMasterDefer | TileNmCtlMasterPrefer | TileNmCtlMasterNone);
+    ms = tilenmctlcfg & (TileNmCtlStackDefer  | TileNmCtlStackPrefer  | TileNmCtlStackNone );
+    ma = arg->i & (TileNmCtlInc | TileNmCtlDec);
+    if ( ( mm != TileNmCtlMasterDefer && mm != TileNmCtlMasterPrefer && mm != TileNmCtlMasterNone )
+      || ( ms != TileNmCtlStackDefer  && ms != TileNmCtlStackPrefer  && ms != TileNmCtlStackNone  )
+      || ( ma != TileNmCtlInc         && ma != TileNmCtlDec                                       )
+      || ( (tilenmctlcfg & TileNmCtlMasterNoMove)
+        && !( (tilenmctlcfg & TileNmCtlMasterAndDeny) && mm == TileNmCtlMasterPrefer) )
+      || ( (tilenmctlcfg & TileNmCtlStackNoMove )
+        && !( (tilenmctlcfg & TileNmCtlStackAndDeny ) && ms == TileNmCtlStackPrefer ) )
+       ) return;
+
+    dir = arg->i == TileNmCtlInc;
+    if (!dir && selmon->nmaster <= 0)
+        return;
+
+    ti   = tileinfo();
+    deny = 0;
+    md   = tilenmctlcfg & (dir ? TileNmCtlStackAndDeny : TileNmCtlMasterAndDeny);
+    if (ti.xs[dir] && (int[2]){ selmon->nmaster <= ti.nc
+                              , selmon->nmaster <  ti.nc }[dir]) {
+        deny = bsts[dir][dir] == ti.xs[dir];
+        if (tilenmctlcfg & (dir ? TileNmCtlStackDefer : TileNmCtlMasterDefer)) {
+            if (deny && !(deny = ti.bs[dir] == ti.ts[dir]))
+                cswap(ti.xs[dir], dir ? nexttiled(ti.xs[1]->next) : cprevtiled(ti.xs[0]));
+        } else if (tilenmctlcfg & (dir ? TileNmCtlStackPrefer : TileNmCtlMasterPrefer)) {
+            mn   = tilenmctlcfg & (dir ? TileNmCtlStackNoMove : TileNmCtlMasterNoMove);
+            deny = 1;
+            if (bsts[dir][dir] != ti.xs[dir] && !mn)
+                cswap(bsts[dir][dir], ti.xs[dir]);
+        }
+    }
+
+    if (!md || !deny) {
+        selmon->pertag->nmasters[selmon->pertag->curtag] = selmon->nmaster += dir ? 1 : -1;
+        if (!(arg->i & TileNmCtlNoArrange))
+            arrange(selmon);
+    }
+}
+
+void
+tilenmctldefaultfallback(const Arg *arg)
+{
+    Arg a;
+
+    if (!arg)
+        return;
+
+    switch (arg->i) {
+        case TileNmCtlInc: a.i = +1; break;
+        case TileNmCtlDec: a.i = -1; break;
+        default: return;
+    }
+
+    incnmaster(&a);
 }
 
 void

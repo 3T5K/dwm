@@ -58,6 +58,13 @@ static const int tmpnmcfg
     | TmpNmHookToggleFloating
     ;
 
+static const TileNmCtlCallback tilenmctlfallback
+    = tilenmctldefaultfallback;
+
+static const int tilenmctlcfg
+    = TileNmCtlMasterPrefer
+    | TileNmCtlStackPrefer
+    ;
 
 /* tagging */
 static const char *tags[] = { "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX" };
