@@ -27,9 +27,13 @@ https://dwm.suckless.org/patches/swapmonitors/
 
 ## patch files
 
-The diff does not include pertag. It must be patched separately.
+The following diffs do not include their dependencies. Those must be applied
+separately.
 
-### swapmonitors-6.8 + pertag-61bb8b2
+### swapmonitors-pertag-6.8
+**Dependencies:**
+- pertag-61bb8b2
+
 ```sh
 git diff swapmonitors-pertag-6.8^^..swapmonitors-pertag-6.8 > dwm-swapmonitors-pertag-6.8.diff
 ```
