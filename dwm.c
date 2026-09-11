@@ -2272,9 +2272,9 @@ swapmon(const Arg *arg)
         updatebarpos(i);
         XMoveResizeWindow( dpy
                          , i->barwin
-                         , i->wx
-                         , i->by
-                         , i->ww
+                         , i->wx + sp
+                         , i->by + vp
+                         , i->ww - 2 * sp
                          , bh
                          );
         arrange(i);
