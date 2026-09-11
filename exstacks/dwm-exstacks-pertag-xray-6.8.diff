@@ -11,7 +11,7 @@ index 81c3fc0..4b07e6b 100644
  	{ MODKEY,                       XK_Tab,    view,           {0} },
  	{ MODKEY|ShiftMask,             XK_c,      killclient,     {0} },
 diff --git a/dwm.c b/dwm.c
-index fc2bea8..f35d8b5 100644
+index fc2bea8..7317b5b 100644
 --- a/dwm.c
 +++ b/dwm.c
 @@ -66,7 +66,7 @@ enum { WMProtocols, WMDelete, WMState, WMTakeFocus, WMLast }; /* default atoms *
@@ -134,7 +134,7 @@ index fc2bea8..f35d8b5 100644
 +    if (n == 0)
 +        return;
 +
-+    if (!m->sel->isfloating)
++    if (m->sel && !m->sel->isfloating)
 +        xr[si >= m->nmaster] = m->sel;
 +
 +    if (n > m->nmaster)
