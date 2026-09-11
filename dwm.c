@@ -2286,9 +2286,9 @@ swapmon(const Arg *arg)
         XMoveResizeWindow(
             dpy,
             arr[x]->barwin,
-            arr[x]->wx,
-            arr[x]->by,
-            arr[x]->ww,
+            arr[x]->wx + sp,
+            arr[x]->by + vp,
+            arr[x]->ww - 2 * sp,
             bh
         );
         arrange(arr[x]);
