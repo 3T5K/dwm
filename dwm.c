@@ -1455,14 +1455,14 @@ rstacks(void)
         return;
 
     for (nc = 0, c = nexttiled(selmon->clients); c; c = nexttiled(c->next), ++nc);
-    mm = selmon->stacks.master && mm == RStacksMasterReset;
-    ms = selmon->stacks.stack  && ms == RStacksStackReset ;
+    mm = selmon->pertag->exstacks[selmon->pertag->curtag].master && mm == RStacksMasterReset;
+    ms = selmon->pertag->exstacks[selmon->pertag->curtag].stack  && ms == RStacksStackReset ;
 
     if (mm && (nc == 0 || selmon->nmaster == 0))
-        selmon->stacks.master = 0;
+        selmon->pertag->exstacks[selmon->pertag->curtag].master = 0;
 
     if (ms && (nc == 0 || nc <= selmon->nmaster))
-        selmon->stacks.stack = 0;
+        selmon->pertag->exstacks[selmon->pertag->curtag].stack = 0;
 }
 
 void
