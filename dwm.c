@@ -228,6 +228,7 @@ static void spawn(const Arg *arg);
 static void tag(const Arg *arg);
 static void tagmon(const Arg *arg);
 static void tile(Monitor *m);
+static void tileffb(Client **out, Client *c);
 static TileInfo tileinfo(void);
 static void togglebar(const Arg *arg);
 static void togglefloating(const Arg *arg);
@@ -1853,6 +1854,51 @@ tileinfo(void)
 }
 
 void
+tileffb(Client **out, Client *c)
+{
+    TileInfo ti;
+    Client *x, *y;
+    int i;
+
+    if (!out || !c || c->mon->lt[c->mon->sellt]->arrange != &tile)
+        return;
+
+    *out = NULL;
+    if (selmon->sel != c)
+        return;
+
+    if (c->isfloating) {
+        for ( x = c->mon->stack
+            ; x && (!x->isfloating || !ISVISIBLE(x) || x == c)
+            ; x = x->snext
+            );
+        *out = x;
+        return;
+    }
+
+    ti = tileinfo();
+    if (ti.nc == 1)
+        return;
+
+    if (ti.xs[ti.st]) {
+        for (x = selmon->stack; x; x = x->snext)
+            if (ISVISIBLE(x) && !x->isfloating && x != c) {
+                for ( i = 0, y = nexttiled(selmon->clients)
+                    ; y && y != x
+                    ; y = nexttiled(y->next), ++i
+                    );
+                if ((int[2]){ i <  selmon->nmaster
+                            , i >= selmon->nmaster }[ti.st]) {
+                    *out = x;
+                    return;
+                }
+            }
+    }
+
+    *out = ti.cs[1] ? ti.cs[1] : ti.cs[0];
+}
+
+void
 togglebar(const Arg *arg)
 {
 	selmon->showbar = !selmon->showbar;
@@ -1921,9 +1967,11 @@ unfocus(Client *c, int setfocus)
 void
 unmanage(Client *c, int destroyed)
 {
+    Client *nc = NULL;
 	Monitor *m = c->mon;
 	XWindowChanges wc;
 
+    tileffb(&nc, c);
 	detach(c);
 	detachstack(c);
 	if (!destroyed) {
@@ -1939,7 +1987,7 @@ unmanage(Client *c, int destroyed)
 		XUngrabServer(dpy);
 	}
 	free(c);
-	focus(NULL);
+	focus(nc);
 	updateclientlist();
 	arrange(m);
 }
