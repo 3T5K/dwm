@@ -1,0 +1,82 @@
+diff --git a/config.def.h b/config.def.h
+index 4b07e6b..82760fc 100644
+--- a/config.def.h
++++ b/config.def.h
+@@ -18,6 +18,11 @@ static const char *colors[][3]      = {
+ 	[SchemeSel]  = { col_gray4, col_cyan,  col_cyan  },
+ };
+ 
++static const int rstackscfg
++    = RStacksMasterReset
++    | RStacksStackReset
++    ;
++
+ /* tagging */
+ static const char *tags[] = { "1", "2", "3", "4", "5", "6", "7", "8", "9" };
+ 
+diff --git a/dwm.c b/dwm.c
+index c8463e2..7ff44ef 100644
+--- a/dwm.c
++++ b/dwm.c
+@@ -65,6 +65,12 @@ enum { NetSupported, NetWMName, NetWMState, NetWMCheck,
+ enum { WMProtocols, WMDelete, WMState, WMTakeFocus, WMLast }; /* default atoms */
+ enum { ClkTagBar, ClkLtSymbol, ClkStatusText, ClkWinTitle,
+        ClkClientWin, ClkRootWin, ClkLast }; /* clicks */
++enum {
++    RStacksMasterReset = 1 << 0,
++    RStacksMasterKeep  = 1 << 1,
++    RStacksStackReset  = 1 << 2,
++    RStacksStackKeep   = 1 << 3,
++};
+ 
+ typedef union {
+ 	int i;
+@@ -199,6 +205,7 @@ static void resize(Client *c, int x, int y, int w, int h, int interact);
+ static void resizeclient(Client *c, int x, int y, int w, int h);
+ static void resizemouse(const Arg *arg);
+ static void restack(Monitor *m);
++static void rstacks(void);
+ static void run(void);
+ static void scan(void);
+ static int sendevent(Client *c, Atom proto);
+@@ -1408,6 +1415,32 @@ restack(Monitor *m)
+ 	while (XCheckMaskEvent(dpy, EnterWindowMask, &ev));
+ }
+ 
++void
++rstacks(void)
++{
++    Client *c;
++    int nc, mm, ms;
++
++    if (selmon->lt[selmon->sellt]->arrange != &tile)
++        return;
++
++    mm = rstackscfg & (RStacksMasterReset | RStacksMasterKeep);
++    ms = rstackscfg & (RStacksStackReset  | RStacksStackKeep );
++    if ( (mm != RStacksMasterReset && mm != RStacksMasterKeep)
++      || (ms != RStacksStackReset  && ms != RStacksStackKeep ) )
++        return;
++
++    for (nc = 0, c = nexttiled(selmon->clients); c; c = nexttiled(c->next), ++nc);
++    mm = selmon->stacks.master && mm == RStacksMasterReset;
++    ms = selmon->stacks.stack  && ms == RStacksStackReset ;
++
++    if (mm && (nc == 0 || selmon->nmaster == 0))
++        selmon->stacks.master = 0;
++
++    if (ms && (nc == 0 || nc <= selmon->nmaster))
++        selmon->stacks.stack = 0;
++}
++
+ void
+ run(void)
+ {
+@@ -1812,6 +1845,7 @@ unmanage(Client *c, int destroyed)
+ 
+ 	detach(c);
+ 	detachstack(c);
++    rstacks();
+ 	if (!destroyed) {
+ 		wc.border_width = c->oldbw;
+ 		XGrabServer(dpy); /* avoid race conditions */
