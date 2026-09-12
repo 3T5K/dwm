@@ -65,6 +65,12 @@ enum { NetSupported, NetWMName, NetWMState, NetWMCheck,
 enum { WMProtocols, WMDelete, WMState, WMTakeFocus, WMLast }; /* default atoms */
 enum { ClkTagBar, ClkLtSymbol, ClkStatusText, ClkWinTitle,
        ClkClientWin, ClkRootWin, ClkLast }; /* clicks */
+enum {
+    RStacksMasterReset        = 1 << 0,
+    RStacksMasterKeep         = 1 << 1,
+    RStacksStackReset         = 1 << 2,
+    RStacksStackKeep          = 1 << 3,
+};
 
 typedef union {
 	int i;
@@ -199,6 +205,7 @@ static void resize(Client *c, int x, int y, int w, int h, int interact);
 static void resizeclient(Client *c, int x, int y, int w, int h);
 static void resizemouse(const Arg *arg);
 static void restack(Monitor *m);
+static void rstacks(void);
 static void run(void);
 static void scan(void);
 static int sendevent(Client *c, Atom proto);
@@ -1409,6 +1416,29 @@ restack(Monitor *m)
 }
 
 void
+rstacks(void)
+{
+    Client *c;
+    int nc, mm, ms;
+
+    mm = rstackscfg & (RStacksMasterReset | RStacksMasterKeep);
+    ms = rstackscfg & (RStacksStackReset  | RStacksStackKeep );
+    if ( (mm != RStacksMasterReset && mm != RStacksMasterKeep)
+      || (ms != RStacksStackReset  && ms != RStacksStackKeep ) )
+        return;
+
+    for (nc = 0, c = nexttiled(selmon->clients); c; c = nexttiled(c->next), ++nc);
+    mm = selmon->stacks.master && mm == RStacksMasterReset;
+    ms = selmon->stacks.stack  && ms == RStacksStackReset ;
+
+    if (mm && (nc == 0 || selmon->nmaster == 0))
+        selmon->stacks.master = 0;
+
+    if (ms && (nc == 0 || nc <= selmon->nmaster))
+        selmon->stacks.stack = 0;
+}
+
+void
 run(void)
 {
 	XEvent ev;
@@ -1718,6 +1748,8 @@ tile(Monitor *m)
 {
 	unsigned int i, n, h, mw, my, ty;
 	Client *c;
+
+    rstacks();
 
 	for (n = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), n++);
 	if (n == 0)
