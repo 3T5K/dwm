@@ -68,6 +68,11 @@ static const int tilenmctlcfg
     | TileNmCtlStackPrefer
     ;
 
+static const int rstackscfg
+    = RStacksMasterReset
+    | RStacksStackReset
+    ;
+
 /* tagging */
 static const char *tags[] = { "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX" };
 

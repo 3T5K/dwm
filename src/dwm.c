@@ -119,6 +119,12 @@ enum {
     TileNmCtlStackAndDeny  = 1 << 8,
     TileNmCtlStackNoMove   = 1 << 9,
 };
+enum {
+    RStacksMasterReset = 1 << 0,
+    RStacksMasterKeep  = 1 << 1,
+    RStacksStackReset  = 1 << 2,
+    RStacksStackKeep   = 1 << 3,
+};
 
 typedef union {
 	int i;
@@ -281,6 +287,7 @@ static void resize(Client *c, int x, int y, int w, int h, int interact);
 static void resizeclient(Client *c, int x, int y, int w, int h);
 static void resizemouse(const Arg *arg);
 static void restack(Monitor *m);
+static void rstacks(void);
 static void run(void);
 static void scan(void);
 static int sendevent(Client *c, Atom proto);
@@ -1952,6 +1959,32 @@ restack(Monitor *m)
 }
 
 void
+rstacks(void)
+{
+    Client *c;
+    int nc, mm, ms;
+
+    if (selmon->lt[selmon->sellt]->arrange != &tile)
+        return;
+
+    mm = rstackscfg & (RStacksMasterReset | RStacksMasterKeep);
+    ms = rstackscfg & (RStacksStackReset  | RStacksStackKeep );
+    if ( (mm != RStacksMasterReset && mm != RStacksMasterKeep)
+      || (ms != RStacksStackReset  && ms != RStacksStackKeep ) )
+        return;
+
+    for (nc = 0, c = nexttiled(selmon->clients); c; c = nexttiled(c->next), ++nc);
+    mm = selmon->pertag->exstacks[selmon->pertag->curtag].master && mm == RStacksMasterReset;
+    ms = selmon->pertag->exstacks[selmon->pertag->curtag].stack  && ms == RStacksStackReset ;
+
+    if (mm && (nc == 0 || selmon->nmaster == 0))
+        selmon->pertag->exstacks[selmon->pertag->curtag].master = 0;
+
+    if (ms && (nc == 0 || nc <= selmon->nmaster))
+        selmon->pertag->exstacks[selmon->pertag->curtag].stack = 0;
+}
+
+void
 run(void)
 {
 	XEvent ev;
@@ -2776,6 +2809,7 @@ unmanage(Client *c, int destroyed)
     tmpnmdec(c, TmpNmHookUnmanage);
     detach(c);
 	detachstack(c);
+    rstacks();
 	if (!destroyed) {
 		wc.border_width = c->oldbw;
 		XGrabServer(dpy); /* avoid race conditions */
