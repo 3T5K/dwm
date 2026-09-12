@@ -149,6 +149,8 @@ typedef struct {
 	int monitor;
 } Rule;
 
+typedef Client *(*TileFFBCallback)(Client *);
+
 typedef struct {
     Client *bs[2]; /* bs[0]: bottom master client bs[1]: bottom stack client */
     Client *ts[2]; /* ts[0]: top master client    ts[1]: top stack client    */
@@ -228,6 +230,7 @@ static void spawn(const Arg *arg);
 static void tag(const Arg *arg);
 static void tagmon(const Arg *arg);
 static void tile(Monitor *m);
+static Client *tileffb(Client *c);
 static TileInfo tileinfo(void);
 static void togglebar(const Arg *arg);
 static void togglefloating(const Arg *arg);
@@ -1852,6 +1855,51 @@ tileinfo(void)
     return ti;
 }
 
+Client *
+tileffb(Client *c)
+{
+    TileInfo ti;
+    Client *x, *y;
+    int i;
+
+    if (selmon->lt[selmon->sellt]->arrange != &tile)
+        return tileffbfallback ? tileffbfallback(c) : NULL;
+
+    if (!c || selmon->sel != c)
+        return NULL;
+
+    if (c->isfloating) {
+        for ( x = c->mon->stack
+            ; x && (!x->isfloating || !ISVISIBLE(x) || x == c)
+            ; x = x->snext
+            );
+        return x;
+    }
+
+    ti = tileinfo();
+    if (ti.nc == 1)
+        return NULL;
+
+    if (ti.xs[ti.st]) {
+        for (x = selmon->stack; x; x = x->snext)
+            if (ISVISIBLE(x) && !x->isfloating && x != c) {
+                for ( i = 0, y = nexttiled(selmon->clients)
+                    ; y && y != x
+                    ; y = nexttiled(y->next), ++i
+                    );
+                if ((int[2]){ i <  selmon->nmaster
+                            , i >= selmon->nmaster }[ti.st]) {
+                    return x;
+                }
+            }
+    }
+
+    if (ti.st && ti.xs[0] && selmon->sel == ti.ts[1] && selmon->sel == ti.bs[1])
+        return ti.xs[0];
+
+    return ti.cs[1] ? ti.cs[1] : ti.cs[0];
+}
+
 void
 togglebar(const Arg *arg)
 {
@@ -1921,9 +1969,11 @@ unfocus(Client *c, int setfocus)
 void
 unmanage(Client *c, int destroyed)
 {
+    Client *nc = NULL;
 	Monitor *m = c->mon;
 	XWindowChanges wc;
 
+    nc = tileffb(c);
 	detach(c);
 	detachstack(c);
 	if (!destroyed) {
@@ -1939,7 +1989,7 @@ unmanage(Client *c, int destroyed)
 		XUngrabServer(dpy);
 	}
 	free(c);
-	focus(NULL);
+	focus(nc);
 	updateclientlist();
 	arrange(m);
 }
