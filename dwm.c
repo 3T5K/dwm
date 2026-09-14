@@ -72,6 +72,11 @@ enum {
     TmpNmHookUnmanage       = 1 << 1,
     TmpNmHookToggleFloating = 1 << 2,
     TmpNmHookSetFullscreen  = 1 << 3,
+    TmpNmPrefer             = 1 << 4,
+    TmpNmDefer              = 1 << 5,
+    TmpNmNone               = 1 << 6,
+    TmpNmAndDeny            = 1 << 7,
+    TmpNmNoMove             = 1 << 8,
 };
 
 typedef union {
@@ -1985,20 +1990,37 @@ tileinfo(void)
 void
 tmpnmdec(Client *c, int arg)
 {
-    Client *i;
-    int nc, si;
+    TileInfo ti;
+    int ms, mn, md, d;
 
-    if (!c || !c->mon || !(tmpnmcfg & arg) || c->isfloating || !ISVISIBLE(c))
+    if ( !c || selmon->sel != c || !(tmpnmcfg & arg) || c->isfloating
+      || !ISVISIBLE(c) || selmon->lt[selmon->sellt]->arrange != &tile )
         return;
 
-    for (nc = si = 0, i = nexttiled(c->mon->clients); i; ++nc, i = nexttiled(i->next))
-        if (i == c)
-            si = nc;
-    c->mon->nmaster = c->mon->pertag->nmasters[c->mon->pertag->curtag]
-        = (nc == 1 && (tmpnmcfg & TmpNmRespectNmaster)) ? nmaster
-        : (nc < c->mon->nmaster) ? nc - (nc > MAX(tmpnmdectil, 0))
-        : c->mon->nmaster - (si < c->mon->nmaster
-                && c->mon->nmaster > MAX(tmpnmdectil, 0));
+    ms = tmpnmcfg & (TmpNmPrefer | TmpNmDefer | TmpNmNone);
+    mn = (tmpnmcfg & TmpNmNoMove)  != 0;
+    md = (tmpnmcfg & TmpNmAndDeny) != 0;
+    if ( ( ms != TmpNmPrefer && ms != TmpNmDefer && ms != TmpNmNone )
+      || ( mn && !(md && ms == TmpNmPrefer) ) )
+        return;
+
+    ti = tileinfo();
+
+    if (!ti.st && tmpnmdectil > 0 && selmon->nmaster <= tmpnmdectil && ti.xs[1]) {
+        d = ti.ts[1] == ti.xs[1];
+        if (ms == TmpNmDefer && d && !(d = ti.ts[1] == ti.bs[1]))
+            cswap(ti.xs[1], nexttiled(ti.xs[1]->next));
+        else if (ms == TmpNmPrefer && ((d = 1), !mn))
+            cswap(ti.ts[1], ti.xs[1]);
+        if (md && d)
+            selmon->pertag->nmasters[selmon->pertag->curtag] = --selmon->nmaster;
+        return;
+    }
+
+    c->mon->nmaster = selmon->pertag->nmasters[selmon->pertag->curtag]
+        = (ti.nc == 1 && (tmpnmcfg & TmpNmRespectNmaster)) ? nmaster
+        : (ti.nc < selmon->nmaster) ? ti.nc - (ti.nc > MAX(tmpnmdectil, 0))
+        : selmon->nmaster - (!ti.st && selmon->nmaster > MAX(tmpnmdectil, 0));
 }
 
 void
