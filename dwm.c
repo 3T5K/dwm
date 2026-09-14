@@ -65,6 +65,12 @@ enum { NetSupported, NetWMName, NetWMState, NetWMCheck,
 enum { WMProtocols, WMDelete, WMState, WMTakeFocus, WMLast }; /* default atoms */
 enum { ClkTagBar, ClkLtSymbol, ClkStatusText, ClkWinTitle,
        ClkClientWin, ClkRootWin, ClkLast }; /* clicks */
+enum {
+    RMfactResetOnEmptyMaster = 1 << 0,
+    RMfactResetOnEmptyStack  = 1 << 1,
+    RMfactHookArrangeMon     = 1 << 2,
+    RMfactHookTile           = 1 << 3,
+};
 
 typedef union {
 	int i;
@@ -192,6 +198,7 @@ static void resize(Client *c, int x, int y, int w, int h, int interact);
 static void resizeclient(Client *c, int x, int y, int w, int h);
 static void resizemouse(const Arg *arg);
 static void restack(Monitor *m);
+static void rmfact(int arg);
 static void run(void);
 static void scan(void);
 static int sendevent(Client *c, Atom proto);
@@ -396,6 +403,7 @@ void
 arrangemon(Monitor *m)
 {
 	strncpy(m->ltsymbol, m->lt[m->sellt]->symbol, sizeof m->ltsymbol);
+    rmfact(RMfactHookArrangeMon);
 	if (m->lt[m->sellt]->arrange)
 		m->lt[m->sellt]->arrange(m);
 }
@@ -1380,6 +1388,24 @@ restack(Monitor *m)
 }
 
 void
+rmfact(int arg)
+{
+    Client *c;
+    int nc, mm, ms, mh;
+
+    mh = rmfactcfg & (RMfactHookArrangeMon | RMfactHookTile);
+    if ((mh != RMfactHookArrangeMon && mh != RMfactHookTile) || !(rmfactcfg & arg))
+        return;
+
+    for (nc = 0, c = nexttiled(selmon->clients); c; c = nexttiled(c->next), ++nc);
+
+    mm = rmfactcfg & RMfactResetOnEmptyMaster;
+    ms = rmfactcfg & RMfactResetOnEmptyStack;
+    if (nc == 0 || (mm && selmon->nmaster == 0) || (ms && nc <= selmon->nmaster))
+        selmon->mfact = mfact;
+}
+
+void
 run(void)
 {
 	XEvent ev;
@@ -1689,6 +1715,8 @@ tile(Monitor *m)
 {
 	unsigned int i, n, h, mw, my, ty;
 	Client *c;
+
+    rmfact(RMfactHookTile);
 
 	for (n = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), n++);
 	if (n == 0)
