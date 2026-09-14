@@ -22,6 +22,7 @@ static const int tmpnmdectil = 1;
 
 static const int tmpnmcfg
     = TmpNmRespectNmaster
+    | TmpNmPrefer
     | TmpNmHookUnmanage
     | TmpNmHookToggleFloating
     | TmpNmHookSetFullscreen
