@@ -1428,7 +1428,7 @@ rmfact(int arg)
     mm = rmfactcfg & RMfactResetOnEmptyMaster;
     ms = rmfactcfg & RMfactResetOnEmptyStack;
     if (nc == 0 || (mm && selmon->nmaster == 0) || (ms && nc <= selmon->nmaster))
-        selmon->mfact = mfact;
+        selmon->mfact = selmon->pertag->mfacts[selmon->pertag->curtag] = mfact;
 }
 
 void
