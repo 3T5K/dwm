@@ -1966,12 +1966,19 @@ tileffb(Client *c)
 {
     TileInfo ti;
     Client *x, *y;
-    int i;
+    int i, ms, mn, md;
 
     if (selmon->lt[selmon->sellt]->arrange != &tile)
         return tileffbfallback ? tileffbfallback(c) : NULL;
 
     if (!c || selmon->sel != c)
+        return NULL;
+
+    ms = tmpnmcfg & (TmpNmPrefer | TmpNmDefer | TmpNmNone);
+    mn = (tmpnmcfg & TmpNmNoMove)  != 0;
+    md = (tmpnmcfg & TmpNmAndDeny) != 0;
+    if ( ( ms != TmpNmPrefer && ms != TmpNmDefer && ms != TmpNmNone )
+      || ( mn && !(md && ms == TmpNmPrefer) ) )
         return NULL;
 
     if (c->isfloating) {
@@ -2000,8 +2007,27 @@ tileffb(Client *c)
             }
     }
 
-    if (ti.st && ti.xs[0] && selmon->sel == ti.ts[1] && selmon->sel == ti.bs[1])
-        return ti.xs[0];
+    if (!ti.st) {
+        if (ti.xs[1]) {
+            if ( selmon->nmaster > MAX(tmpnmdectil, 0)
+              || (md && ms == TmpNmPrefer                         )
+              || (md && ms == TmpNmDefer  && ti.xs[1] == ti.bs[1]
+                                          && ti.xs[1] == ti.ts[1] )
+              || (md && ms == TmpNmNone   && ti.xs[1] == ti.ts[1] ) )
+                return selmon->sel == ti.bs[0]
+                    ? ti.cs[0] ? ti.cs[0] : ti.xs[1]
+                    : ti.cs[1];
+
+            if (ms == TmpNmPrefer)
+                return selmon->sel == ti.bs[0] ? ti.xs[1] : ti.cs[1];
+
+            if ( ms == TmpNmDefer     && ti.ts[1] == ti.xs[1]
+              && ti.bs[1] != ti.xs[1] && ti.bs[0] == selmon->sel )
+                return nexttiled(ti.xs[1]->next);
+
+        } else if (selmon->nmaster > MAX(tmpnmdectil, 0))
+            return (x = ti.cs[selmon->sel != ti.bs[0]]) ? x : ti.cs[1];
+    }
 
     return ti.cs[1] ? ti.cs[1] : ti.cs[0];
 }
