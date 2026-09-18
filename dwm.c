@@ -83,6 +83,10 @@ enum {
     TileNmCtlStackNone     = 1 << 7,
     TileNmCtlStackAndDeny  = 1 << 8,
     TileNmCtlStackNoMove   = 1 << 9,
+    TileNmCtlMasterMakeAc  = 1 << 10,
+    TileNmCtlStackMakeAc   = 1 << 11,
+    TileNmCtlMasterHijack  = 1 << 12,
+    TileNmCtlStackHijack   = 1 << 13,
 };
 
 typedef union {
@@ -1970,7 +1974,7 @@ void
 tilenmctl(const Arg *arg)
 {
     TileInfo ti;
-    Client **bsts[2] = { ti.bs, ti.ts };
+    Client *x, *y, *c, **bsts[2] = { ti.bs, ti.ts };
     int mm, ms, ma, mn, md, dir, deny;
 
     if (selmon->lt[selmon->sellt]->arrange != &tile) {
@@ -1999,24 +2003,34 @@ tilenmctl(const Arg *arg)
         return;
 
     ti   = tileinfo();
+    c    = bsts[dir][dir];
     deny = 0;
     md   = tilenmctlcfg & (dir ? TileNmCtlStackAndDeny : TileNmCtlMasterAndDeny);
     if (ti.xs[dir] && (int[2]){ selmon->nmaster <= ti.nc
                               , selmon->nmaster <  ti.nc }[dir]) {
-        deny = bsts[dir][dir] == ti.xs[dir];
+        deny = c == ti.xs[dir];
         if (tilenmctlcfg & (dir ? TileNmCtlStackDefer : TileNmCtlMasterDefer)) {
             if (deny && !(deny = ti.bs[dir] == ti.ts[dir]))
-                cswap(ti.xs[dir], dir ? nexttiled(ti.xs[1]->next) : cprevtiled(ti.xs[0]));
+                cswap(ti.xs[dir], (c = dir ? nexttiled(ti.xs[1]->next) : cprevtiled(ti.xs[0])));
         } else if (tilenmctlcfg & (dir ? TileNmCtlStackPrefer : TileNmCtlMasterPrefer)) {
             mn   = tilenmctlcfg & (dir ? TileNmCtlStackNoMove : TileNmCtlMasterNoMove);
             deny = 1;
             if (bsts[dir][dir] != ti.xs[dir] && !mn)
-                cswap(bsts[dir][dir], ti.xs[dir]);
+                cswap(bsts[dir][dir], (c = ti.xs[dir]));
         }
     }
 
     if (!md || !deny) {
         selmon->nmaster += dir ? 1 : -1;
+        if (selmon->sel != c && ti.xs[!dir] && (tilenmctlcfg & (dir ? TileNmCtlMasterMakeAc
+                                                                    : TileNmCtlStackMakeAc))) {
+            ti.xs[!dir]->xraystat = XrayIn;
+            xraycfg(c, ti.xs[!dir]->xraygrp, XrayAc);
+            /* adjust clients->stack */
+        }
+        if (selmon->sel == ti.xs[!dir] && (tilenmctlcfg & (dir ? TileNmCtlMasterHijack
+                                                              : TileNmCtlStackHijack)))
+            focus(c);
         if (!(arg->i & TileNmCtlNoArrange))
             arrange(selmon);
     }
