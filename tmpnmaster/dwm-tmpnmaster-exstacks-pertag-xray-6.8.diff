@@ -1,0 +1,118 @@
+diff --git a/config.def.h b/config.def.h
+index 4b07e6b..26b9185 100644
+--- a/config.def.h
++++ b/config.def.h
+@@ -18,6 +18,16 @@ static const char *colors[][3]      = {
+ 	[SchemeSel]  = { col_gray4, col_cyan,  col_cyan  },
+ };
+ 
++static const int tmpnmdectil = 1;
++
++static const int tmpnmcfg
++    = TmpNmRespectNmaster
++    | TmpNmPrefer
++    | TmpNmHookUnmanage
++    | TmpNmHookToggleFloating
++    | TmpNmHookSetFullscreen
++    ;
++
+ /* tagging */
+ static const char *tags[] = { "1", "2", "3", "4", "5", "6", "7", "8", "9" };
+ 
+diff --git a/dwm.c b/dwm.c
+index 65487ab..215cac8 100644
+--- a/dwm.c
++++ b/dwm.c
+@@ -67,6 +67,17 @@ enum { ClkTagBar, ClkLtSymbol, ClkStatusText, ClkWinTitle,
+        ClkClientWin, ClkRootWin, ClkLast }; /* clicks */
+ enum { XrayIn, XrayAc };
+ enum { XrayGrpNone, XrayGrpTileMaster, XrayGrpTileStack };
++enum {
++    TmpNmRespectNmaster     = 1 << 0,
++    TmpNmHookUnmanage       = 1 << 1,
++    TmpNmHookToggleFloating = 1 << 2,
++    TmpNmHookSetFullscreen  = 1 << 3,
++    TmpNmPrefer             = 1 << 4,
++    TmpNmDefer              = 1 << 5,
++    TmpNmNone               = 1 << 6,
++    TmpNmAndDeny            = 1 << 7,
++    TmpNmNoMove             = 1 << 8,
++};
+ 
+ typedef union {
+ 	int i;
+@@ -234,6 +245,7 @@ static void tag(const Arg *arg);
+ static void tagmon(const Arg *arg);
+ static void tile(Monitor *m);
+ static TileInfo tileinfo(void);
++static void tmpnmdec(Client *c, int arg);
+ static void togglebar(const Arg *arg);
+ static void togglefloating(const Arg *arg);
+ static void toggletag(const Arg *arg);
+@@ -1673,6 +1685,7 @@ setfullscreen(Client *c, int fullscreen)
+ 	if (fullscreen && !c->isfullscreen) {
+ 		XChangeProperty(dpy, c->win, netatom[NetWMState], XA_ATOM, 32,
+ 			PropModeReplace, (unsigned char*)&netatom[NetWMFullscreen], 1);
++        tmpnmdec(c, TmpNmHookSetFullscreen);
+ 		c->isfullscreen = 1;
+ 		c->oldstate = c->isfloating;
+ 		c->oldbw = c->bw;
+@@ -1974,6 +1987,42 @@ tileinfo(void)
+     return ti;
+ }
+ 
++void
++tmpnmdec(Client *c, int arg)
++{
++    TileInfo ti;
++    int ms, mn, md, d;
++
++    if ( !c || selmon->sel != c || !(tmpnmcfg & arg) || c->isfloating
++      || !ISVISIBLE(c) || selmon->lt[selmon->sellt]->arrange != &tile )
++        return;
++
++    ms = tmpnmcfg & (TmpNmPrefer | TmpNmDefer | TmpNmNone);
++    mn = (tmpnmcfg & TmpNmNoMove)  != 0;
++    md = (tmpnmcfg & TmpNmAndDeny) != 0;
++    if ( ( ms != TmpNmPrefer && ms != TmpNmDefer && ms != TmpNmNone )
++      || ( mn && !(md && ms == TmpNmPrefer) ) )
++        return;
++
++    ti = tileinfo();
++
++    if (!ti.st && tmpnmdectil > 0 && selmon->nmaster <= tmpnmdectil && ti.xs[1]) {
++        d = ti.ts[1] == ti.xs[1];
++        if (ms == TmpNmDefer && d && !(d = ti.ts[1] == ti.bs[1]))
++            cswap(ti.xs[1], nexttiled(ti.xs[1]->next));
++        else if (ms == TmpNmPrefer && ((d = 1), !mn))
++            cswap(ti.ts[1], ti.xs[1]);
++        if (md && d)
++            selmon->pertag->nmasters[selmon->pertag->curtag] = --selmon->nmaster;
++        return;
++    }
++
++    c->mon->nmaster = selmon->pertag->nmasters[selmon->pertag->curtag]
++        = (ti.nc == 1 && (tmpnmcfg & TmpNmRespectNmaster)) ? nmaster
++        : (ti.nc < selmon->nmaster) ? ti.nc - (ti.nc > MAX(tmpnmdectil, 0))
++        : selmon->nmaster - (!ti.st && selmon->nmaster > MAX(tmpnmdectil, 0));
++}
++
+ void
+ togglebar(const Arg *arg)
+ {
+@@ -1990,6 +2039,7 @@ togglefloating(const Arg *arg)
+ 		return;
+ 	if (selmon->sel->isfullscreen) /* no support for fullscreen windows */
+ 		return;
++    tmpnmdec(selmon->sel, TmpNmHookToggleFloating);
+ 	selmon->sel->isfloating = !selmon->sel->isfloating || selmon->sel->isfixed;
+ 	if (selmon->sel->isfloating) {
+         xraycfg(selmon->sel, XrayGrpNone, -1);
+@@ -2070,6 +2120,7 @@ unmanage(Client *c, int destroyed)
+ 	Monitor *m = c->mon;
+ 	XWindowChanges wc;
+ 
++    tmpnmdec(c, TmpNmHookUnmanage);
+ 	detach(c);
+ 	detachstack(c);
+ 	if (!destroyed) {
