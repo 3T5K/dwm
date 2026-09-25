@@ -18,7 +18,8 @@ enum {
 };
 ```
 
-`RMfactHookArrangeMon` and `RMfactHookTile` are mutually exclusive.
+One, but not both, of `RMfactHookArrangeMon` and `RMfactHookTile` must be set.
+The function `arrangemon` is what invokes a layout function.
 
 ## patch files
 
