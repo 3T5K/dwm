@@ -8,7 +8,7 @@ The configuration is done through the following variable:
 static const int rmfactcfg;
 ```
 
-`rmfactcfg` is expected to be a bitwise OR (`|`) of the following enumerators:
+The configuration must be a bitwise OR (`|`) of the following enumerators:
 ```c
 enum {
     RMfactResetOnEmptyMaster = 1 << 0,
