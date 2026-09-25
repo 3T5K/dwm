@@ -23,8 +23,20 @@ The function `arrangemon` is what invokes a layout function.
 
 ## patch files
 
+The following diffs do not include their dependencies. Those must be applied
+separately.
+
 ### rmfact-6.8
 
 ```sh
 git diff 6.8..rmfact-6.8 > dwm-rmfact-6.8.diff
+```
+
+### rmfact-pertag-6.8
+
+**Dependencies:**
+- pertag-61bb8b2
+
+```sh
+git diff rmfact-pertag-6.8^^..rmfact-pertag-6.8 > dwm-rmfact-pertag-6.8.diff
 ```
