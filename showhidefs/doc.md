@@ -1,5 +1,9 @@
 # showhidefs
 
+The function `showhide` doesn't reposition fullscreen clients. This prevents
+`sendmon` from visually moving the sent client to the respective monitor.
+A Git blame reveals that this was added in 2011 in c14d293e. It appears it was
+necessary for mplayer.
 
 ## patch files
 
