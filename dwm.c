@@ -67,6 +67,20 @@ enum { ClkTagBar, ClkLtSymbol, ClkStatusText, ClkWinTitle,
        ClkClientWin, ClkRootWin, ClkLast }; /* clicks */
 enum { XrayIn, XrayAc };
 enum { XrayGrpNone, XrayGrpTileMaster, XrayGrpTileStack };
+enum {
+    TileZoomMtSTop = 1 << 0,
+    TileZoomMtSBtm = 1 << 1,
+    TileZoomMtSFoc = 1 << 2,
+    TileZoomMtMTop = 1 << 3,
+    TileZoomMtMBtm = 1 << 4,
+    TileZoomMtXDny = 1 << 5,
+    TileZoomStMTop = 1 << 6,
+    TileZoomStMBtm = 1 << 7,
+    TileZoomStMFoc = 1 << 8,
+    TileZoomStSTop = 1 << 9,
+    TileZoomStSBtm = 1 << 10,
+    TileZoomStXDny = 1 << 11,
+};
 
 typedef union {
 	int i;
@@ -159,6 +173,8 @@ typedef struct {
     int     st   ; /* is selected client in stack                            */
 } TileInfo;
 
+typedef void(*TileZoomCallback)(const Arg *);
+
 /* function declarations */
 static void applyrules(Client *c);
 static int applysizehints(Client *c, int *x, int *y, int *w, int *h, int interact);
@@ -233,6 +249,7 @@ static void tag(const Arg *arg);
 static void tagmon(const Arg *arg);
 static void tile(Monitor *m);
 static TileInfo tileinfo(void);
+static void tilezoom(const Arg *arg);
 static void togglebar(const Arg *arg);
 static void togglefloating(const Arg *arg);
 static void toggletag(const Arg *arg);
@@ -1943,6 +1960,58 @@ tileinfo(void)
     ti.st = ti.si >= selmon->nmaster;
 
     return ti;
+}
+
+void
+tilezoom(const Arg *arg)
+{
+    TileInfo ti;
+    Client *x, *y, **bsts[2] = { ti.bs, ti.ts };
+    int mm, ms, nc, mnt, mnb, mst, msb;
+
+    if (selmon->lt[selmon->sellt]->arrange != &tile) {
+        if (tilezoomfallback)
+            tilezoomfallback(arg);
+        return;
+    }
+
+    mm = tilezoomcfg & ( TileZoomMtSTop | TileZoomMtSBtm | TileZoomMtSFoc
+                       | TileZoomMtXDny | TileZoomMtMTop | TileZoomMtMBtm );
+    ms = tilezoomcfg & ( TileZoomStMTop | TileZoomStMBtm | TileZoomStMFoc
+                       | TileZoomStXDny | TileZoomStSTop | TileZoomStSBtm );
+    if ( ( mm != TileZoomMtSTop && mm != TileZoomMtSBtm && mm != TileZoomMtSFoc
+        && mm != TileZoomMtXDny && mm != TileZoomMtMTop && mm != TileZoomMtMBtm )
+      || ( ms != TileZoomStMTop && ms != TileZoomStMBtm && ms != TileZoomStMFoc
+        && ms != TileZoomStXDny && ms != TileZoomStSTop && ms != TileZoomStSBtm )
+      || ( selmon->sel && selmon->sel->isfloating ) )
+        return;
+
+    if (tilezoomcfg & (ti.st ? TileZoomStXDny : TileZoomMtXDny))
+        return;
+
+    ti = tileinfo();
+    if (ti.nc == 0 || selmon->nmaster == 0 || selmon->nmaster >= ti.nc)
+        return;
+
+    mnt = tilezoomcfg & (ti.st ? TileZoomStMTop : TileZoomMtSTop);
+    mnb = tilezoomcfg & (ti.st ? TileZoomStMBtm : TileZoomMtSBtm);
+    mst = tilezoomcfg & (ti.st ? TileZoomStSTop : TileZoomMtMTop);
+    msb = tilezoomcfg & (ti.st ? TileZoomStSBtm : TileZoomMtMBtm);
+    if (mnt || mnb || mst || msb)
+        cswap(selmon->sel, bsts[mnt || mst][(mnt || mnb)^ti.st]);
+    else
+        for (x = selmon->stack; x; x = x->snext)
+            if (ISVISIBLE(x) && !x->isfloating) {
+                for ( nc = 0, y = nexttiled(selmon->clients)
+                    ; y && y != x
+                    ; y = nexttiled(y->next), ++nc );
+                if ((int[2]){ nc >= selmon->nmaster
+                            , nc <  selmon->nmaster }[ti.st]) {
+                    cswap(selmon->sel, x);
+                    break;
+                }
+            }
+    arrange(selmon);
 }
 
 void
