@@ -26,7 +26,7 @@ index 81c3fc0..80daec3 100644
  	{ MODKEY|ShiftMask,             XK_c,      killclient,     {0} },
  	{ MODKEY,                       XK_t,      setlayout,      {.v = &layouts[0]} },
 diff --git a/dwm.c b/dwm.c
-index 9262ede..436a61b 100644
+index 9262ede..7b64f7a 100644
 --- a/dwm.c
 +++ b/dwm.c
 @@ -65,6 +65,20 @@ enum { NetSupported, NetWMName, NetWMState, NetWMCheck,
@@ -37,15 +37,15 @@ index 9262ede..436a61b 100644
 +    TileZoomMtSTop = 1 << 0,
 +    TileZoomMtSBtm = 1 << 1,
 +    TileZoomMtSFoc = 1 << 2,
-+    TileZoomMtSDny = 1 << 3,
-+    TileZoomMtMTop = 1 << 4,
-+    TileZoomMtMBtm = 1 << 5,
++    TileZoomMtMTop = 1 << 3,
++    TileZoomMtMBtm = 1 << 4,
++    TileZoomMtXDny = 1 << 5,
 +    TileZoomStMTop = 1 << 6,
 +    TileZoomStMBtm = 1 << 7,
 +    TileZoomStMFoc = 1 << 8,
-+    TileZoomStMDny = 1 << 9,
-+    TileZoomStSTop = 1 << 10,
-+    TileZoomStSBtm = 1 << 11,
++    TileZoomStSTop = 1 << 9,
++    TileZoomStSBtm = 1 << 10,
++    TileZoomStXDny = 1 << 11,
 +};
  
  typedef union {
@@ -83,23 +83,23 @@ index 9262ede..436a61b 100644
 +            tilezoomfallback(arg);
 +        return;
 +    }
-+ 
++
 +    mm = tilezoomcfg & ( TileZoomMtSTop | TileZoomMtSBtm | TileZoomMtSFoc
-+                       | TileZoomMtSDny | TileZoomMtMTop | TileZoomMtMBtm );
++                       | TileZoomMtXDny | TileZoomMtMTop | TileZoomMtMBtm );
 +    ms = tilezoomcfg & ( TileZoomStMTop | TileZoomStMBtm | TileZoomStMFoc
-+                       | TileZoomStMDny | TileZoomStSTop | TileZoomStSBtm );
++                       | TileZoomStXDny | TileZoomStSTop | TileZoomStSBtm );
 +    if ( ( mm != TileZoomMtSTop && mm != TileZoomMtSBtm && mm != TileZoomMtSFoc
-+        && mm != TileZoomMtSDny && mm != TileZoomMtMTop && mm != TileZoomMtMBtm )
++        && mm != TileZoomMtXDny && mm != TileZoomMtMTop && mm != TileZoomMtMBtm )
 +      || ( ms != TileZoomStMTop && ms != TileZoomStMBtm && ms != TileZoomStMFoc
-+        && ms != TileZoomStMDny && ms != TileZoomStSTop && ms != TileZoomStSBtm )
++        && ms != TileZoomStXDny && ms != TileZoomStSTop && ms != TileZoomStSBtm )
 +      || ( selmon->sel && selmon->sel->isfloating ) )
++        return;
++
++    if (tilezoomcfg & (ti.st ? TileZoomStXDny : TileZoomMtXDny))
 +        return;
 +
 +    ti = tileinfo();
 +    if (ti.nc == 0 || selmon->nmaster == 0 || selmon->nmaster >= ti.nc)
-+        return;
-+
-+    if (tilezoomcfg & (ti.st ? TileZoomStMDny : TileZoomMtSDny))
 +        return;
 +
 +    mnt = tilezoomcfg & (ti.st ? TileZoomStMTop : TileZoomMtSTop);

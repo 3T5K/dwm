@@ -21,15 +21,15 @@ enum {
     TileZoomMtSTop = 1 << 0,
     TileZoomMtSBtm = 1 << 1,
     TileZoomMtSFoc = 1 << 2,
-    TileZoomMtSDny = 1 << 3,
-    TileZoomMtMTop = 1 << 4,
-    TileZoomMtMBtm = 1 << 5,
+    TileZoomMtMTop = 1 << 3,
+    TileZoomMtMBtm = 1 << 4,
+    TileZoomMtXDny = 1 << 5,
     TileZoomStMTop = 1 << 6,
     TileZoomStMBtm = 1 << 7,
     TileZoomStMFoc = 1 << 8,
-    TileZoomStMDny = 1 << 9,
-    TileZoomStSTop = 1 << 10,
-    TileZoomStSBtm = 1 << 11,
+    TileZoomStSTop = 1 << 9,
+    TileZoomStSBtm = 1 << 10,
+    TileZoomStXDny = 1 << 11,
 };
 ```
 
@@ -79,9 +79,9 @@ These enumerators cause the focused client to be swapped with the active client
 of the other area when that area is expanded.
 
 They are to be used in conjunction with the `*MtS*` and `*StM*` enumerators.
-When paired with the `*Dny` enumerators, the denial takes precedence.
 
-They are mutually exclusive with `MtM` and `StS` enumerators respectively.
+They are mutually exclusive with the `MtM`, `StS`, and `*Dny` enumerators
+respectively.
 
 ## patch files
 
