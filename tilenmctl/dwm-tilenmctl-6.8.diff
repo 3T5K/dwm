@@ -29,7 +29,7 @@ index 4b07e6b..76a3eef 100644
  	{ MODKEY,                       XK_l,      setmfact,       {.f = +0.05} },
      { MODKEY,                       XK_x,      exstack,        {0} },
 diff --git a/dwm.c b/dwm.c
-index a51302b..b360329 100644
+index a51302b..12993ed 100644
 --- a/dwm.c
 +++ b/dwm.c
 @@ -67,6 +67,23 @@ enum { ClkTagBar, ClkLtSymbol, ClkStatusText, ClkWinTitle,
@@ -106,7 +106,7 @@ index a51302b..b360329 100644
 +        && !( (tilenmctlcfg & TileNmCtlStackAndDeny ) && ms == TileNmCtlStackPrefer ) )
 +       ) return;
 +
-+    dir = arg->i == TileNmCtlInc;
++    dir = (arg->i & TileNmCtlInc) != 0;
 +    if (!dir && selmon->nmaster <= 0)
 +        return;
 +
