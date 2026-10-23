@@ -80,6 +80,8 @@ enum {
     TileZoomStSTop = 1 << 9,
     TileZoomStSBtm = 1 << 10,
     TileZoomStXDny = 1 << 11,
+    TileZoomMtSExp = 1 << 12,
+    TileZoomStMExp = 1 << 13,
 };
 
 typedef union {
@@ -1967,7 +1969,7 @@ tilezoom(const Arg *arg)
 {
     TileInfo ti;
     Client *x, *y, **bsts[2] = { ti.bs, ti.ts };
-    int mm, ms, nc, mnt, mnb, mst, msb;
+    int mm, ms, nc, mnt, mnb, mne, mst, msb;
 
     if (selmon->lt[selmon->sellt]->arrange != &tile) {
         if (tilezoomfallback)
@@ -1986,6 +1988,14 @@ tilezoom(const Arg *arg)
       || ( selmon->sel && selmon->sel->isfloating ) )
         return;
 
+    if ( ( mm == TileZoomMtMTop || mm == TileZoomMtMBtm )
+      && ( tilezoomcfg & TileZoomMtSExp ) )
+        return;
+
+    if ( ( ms == TileZoomStSTop || ms == TileZoomStSBtm )
+      && ( tilezoomcfg & TileZoomStMExp ) )
+        return;
+
     if (tilezoomcfg & (ti.st ? TileZoomStXDny : TileZoomMtXDny))
         return;
 
@@ -1995,9 +2005,12 @@ tilezoom(const Arg *arg)
 
     mnt = tilezoomcfg & (ti.st ? TileZoomStMTop : TileZoomMtSTop);
     mnb = tilezoomcfg & (ti.st ? TileZoomStMBtm : TileZoomMtSBtm);
+    mne = tilezoomcfg & (ti.st ? TileZoomStMExp : TileZoomMtSExp);
     mst = tilezoomcfg & (ti.st ? TileZoomStSTop : TileZoomMtMTop);
     msb = tilezoomcfg & (ti.st ? TileZoomStSBtm : TileZoomMtMBtm);
-    if (mnt || mnb || mst || msb)
+    if (ti.xs[!ti.st] && mne)
+        cswap(selmon->sel, ti.xs[!ti.st]);
+    else if (mnt || mnb || mst || msb)
         cswap(selmon->sel, bsts[mnt || mst][(mnt || mnb)^ti.st]);
     else
         for (x = selmon->stack; x; x = x->snext)

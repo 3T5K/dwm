@@ -22,7 +22,9 @@ static const TileZoomCallback tilezoomfallback = zoom;
 
 static const int tilezoomcfg
     = TileZoomMtSTop
+    | TileZoomMtSExp
     | TileZoomStMTop
+    | TileZoomStMExp
     ;
 
 /* tagging */
