@@ -18,6 +18,20 @@ static const char *colors[][3]      = {
 	[SchemeSel]  = { col_gray4, col_cyan,  col_cyan  },
 };
 
+static const int sp_exclusive_across_mons = 1;
+static const int sp_permit_fullscreen = 1;
+static const unsigned int sp_borderpx = 1;
+static SpConstMfact sp_constant_mfacts[] = {
+    { monocle, 1.0 },
+    { NULL,    1.0 },
+};
+
+static const Spad sp_defs[] =
+{
+    { "st1", SP_C_NONE, SP_R_XYWH(0.1, 0.1, 0.8, 0.8), SP_M_PID, SP_CMD("st") },
+    { "st2", SP_C_NONE, SP_R_XYWH(0.1, 0.1, 0.8, 0.8), SP_M_PID, SP_CMD("st") }
+};
+
 /* tagging */
 static const char *tags[] = { "1", "2", "3", "4", "5", "6", "7", "8", "9" };
 
@@ -86,6 +100,9 @@ static const Key keys[] = {
 	{ MODKEY,                       XK_period, focusmon,       {.i = +1 } },
 	{ MODKEY|ShiftMask,             XK_comma,  tagmon,         {.i = -1 } },
 	{ MODKEY|ShiftMask,             XK_period, tagmon,         {.i = +1 } },
+    { MODKEY,                       XK_z,      sp_toggle,      {.v = "st1" } },
+    { MODKEY,                       XK_x,      sp_toggle,      {.v = "st2" } },
+    { MODKEY,                       XK_v,      sp_focus,       {0} },
 	TAGKEYS(                        XK_1,                      0)
 	TAGKEYS(                        XK_2,                      1)
 	TAGKEYS(                        XK_3,                      2)
