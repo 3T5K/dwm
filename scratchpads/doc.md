@@ -26,7 +26,9 @@ bitwise OR (`|`), of the following enumerators:
   - `SP_C_CLOSE`: Hides when a different client is killed.
 
 The `rules` field specifies the position and size of the scratchpad. One of the
-following macros should be used to specify this.
+following macros should be used to specify this. Do note that no arguments of
+these macros are checked and/or clamped automatically. Unreasonable values will
+therefore be accepted.
 
 ### `SP_R_TILE`
 This causes the scratchpad to be tiled. Its dimensions are therefore dictated by
@@ -42,8 +44,33 @@ height available for clients on the monitor. For example, making `w` 0.5 and `l`
 and `r` 0, will cause the scratchpad to be half of the screen wide.
 
 ### `SP_R_MFACT(o, i, d)`
+This makes the width of the scratchpad relative to the monitor's `mfact`,
+similarly to clients in the `tile` layout. The `d` parameter can be one of
+`SP_R_MFACT_M` and `SP_R_MFACT_S`. It specifies whether the scratchpad will
+appear in the master or the stack area. The `o` parameter specifies the outer
+gap in pixels around the scratchpad. That's the gap on every side except the one
+where the split between the master and stack area is. The `i` parameter
+specifies that gap.
 
 ### `SP_R_XYWH(x, y, w, h)`
+All parameters are `float` factors of the available width and height
+respectively. If `ww` is maximum width of a client in pixels and `wh` is the
+height, then a scratchpad's `(x, y, width, height)` will be
+`(ww * x, wh * y, ww * w, wh * h)`.
+
+The `match` field specifies how to identify a client to associate with a
+scratchpad. This happens when a scratchpad hasn't been opened yet, or it was
+killed. It must be one of the following macros:
+  - `SP_M_PID`
+  - `SP_M_CLASS(class)`
+  - `SP_M_INSTANCE(instance)`
+  - `SP_M_TITLE(title)`
+`class`, `instance`, and `title` must be non-empty strings.
+
+The `cmd` field specifies the command `sp_toggle` will use to spawn a scratchpad
+client if it wasn't yet, or it has been killed. It should be the `SP_CMD` macro.
+To specify arguments of the command, do so as separate string arguments of the
+macro, i.e. `SP_CMD("command", "--some-flag", "arg")`.
 
 ## functions
 
