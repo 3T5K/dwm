@@ -17,7 +17,9 @@ enum {
 };
 ```
 
-The `rlmap` array defines 
+The `rlmap` array defines layout transitions. Elements whose `.from` is equal to
+their `.to` are ignored. The first element whose `.from` is the arrange function
+of the current layout and its `.to` is different is chosen.
 ```c
 static const RLPair rlmap[] = {
     { .from = monocle, .to = tile },
