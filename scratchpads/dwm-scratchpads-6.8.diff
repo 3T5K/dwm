@@ -35,7 +35,7 @@ index 81c3fc0..ff12955 100644
  	TAGKEYS(                        XK_2,                      1)
  	TAGKEYS(                        XK_3,                      2)
 diff --git a/dwm.c b/dwm.c
-index 53b393e..de6fd24 100644
+index 53b393e..b1423f8 100644
 --- a/dwm.c
 +++ b/dwm.c
 @@ -56,15 +56,49 @@
@@ -46,7 +46,7 @@ index 53b393e..de6fd24 100644
 +#define SP_ISSPAD(C)                (C->tags & (sp_tag_vis | sp_tag_hid))
 +#define SP_R_TILE                   { SP_R_TILE_TAG, {{0}}, 0, 0 }
 +#define SP_R_GAP(g)                 { SP_R_GAPS_TAG, {.gaps = {(g), (g), (g), (g)}}, 1, 1 }
-+#define SP_R_GAPS(t, d, l, r, w, h) { SP_R_GAPS_TAG, {.gaps = {(t), (d), (l), (r)}}, (w), (h) }
++#define SP_R_GAPS(t, b, l, r, w, h) { SP_R_GAPS_TAG, {.gaps = {(t), (b), (l), (r)}}, (w), (h) }
 +#define SP_R_MFACT(o, i, d)         { SP_R_MFACT_TAG, {.mfact = {(o), (i), (d)}}, 0, 1 }
 +#define SP_R_XYWH(x, y, w, h)       { SP_R_XY_TAG, {.xy = {(x), (y)}}, (w), (h) }
 +#define SP_M_PID                    { SP_M_PID_TAG, NULL }
@@ -330,7 +330,7 @@ index 53b393e..de6fd24 100644
  		XMoveWindow(dpy, c->win, c->x, c->y);
  		if ((!c->mon->lt[c->mon->sellt]->arrange || c->isfloating) && !c->isfullscreen)
  			resize(c, c->x, c->y, c->w, c->h, 0);
-@@ -1666,10 +1794,324 @@ spawn(const Arg *arg)
+@@ -1666,10 +1794,320 @@ spawn(const Arg *arg)
  	}
  }
  
@@ -372,10 +372,6 @@ index 53b393e..de6fd24 100644
 +                if (c->mon->lt[c->mon->sellt]->arrange
 +                        == sp_constant_mfacts[i].arrange) {
 +                    mfact = sp_constant_mfacts[i].mfact;
-+                    mfact = mfact == 1 ? 1
-+                          : mfact < 0.05 ? 0.05
-+                          : mfact > 0.95 ? 0.95
-+                          : mfact;
 +                    break;
 +                }
 +            s    = mfact == 1 || nc == 0
@@ -656,7 +652,7 @@ index 53b393e..de6fd24 100644
  		selmon->sel->tags = arg->ui & TAGMASK;
  		focus(NULL);
  		arrange(selmon);
-@@ -1740,7 +2182,7 @@ toggletag(const Arg *arg)
+@@ -1740,7 +2178,7 @@ toggletag(const Arg *arg)
  {
  	unsigned int newtags;
  
@@ -665,7 +661,7 @@ index 53b393e..de6fd24 100644
  		return;
  	newtags = selmon->sel->tags ^ (arg->ui & TAGMASK);
  	if (newtags) {
-@@ -1768,7 +2210,11 @@ unfocus(Client *c, int setfocus)
+@@ -1768,7 +2206,11 @@ unfocus(Client *c, int setfocus)
  	if (!c)
  		return;
  	grabbuttons(c, 0);
@@ -678,7 +674,7 @@ index 53b393e..de6fd24 100644
  	if (setfocus) {
  		XSetInputFocus(dpy, root, RevertToPointerRoot, CurrentTime);
  		XDeleteProperty(dpy, root, netatom[NetActiveWindow]);
-@@ -1778,8 +2224,21 @@ unfocus(Client *c, int setfocus)
+@@ -1778,8 +2220,21 @@ unfocus(Client *c, int setfocus)
  void
  unmanage(Client *c, int destroyed)
  {
@@ -700,7 +696,7 @@ index 53b393e..de6fd24 100644
  
  	detach(c);
  	detachstack(c);
-@@ -2053,12 +2512,15 @@ updatewmhints(Client *c)
+@@ -2053,12 +2508,15 @@ updatewmhints(Client *c)
  void
  view(const Arg *arg)
  {

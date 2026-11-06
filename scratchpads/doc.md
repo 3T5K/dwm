@@ -55,8 +55,8 @@ area, the rule will behave like `SP_R_GAP(g)`, where `g` is `o`.
 
 Layouts like `monocle` don't use `mfact` meaningfully. To specify a constant for
 such layouts, use the `sp_constant_mfacts` array. If the provided mfact is 1,
-the behavior is akin to `SP_R_GAP(g)` as specified above.
-
+the behavior is akin to `SP_R_GAP(g)` as specified above. Similarly to the macro
+arguments, unreasonable `mfact`s will be blindly accepted.
 ```c
 static SpConstMfact sp_constant_mfacts[] = {
     { monocle, 1.0 },
@@ -115,15 +115,15 @@ The border size of scratchpads is controlled by the following variable:
 static const unsigned int sp_borderpx = 1;
 ```
 
-The border color can be specified in the `colors` array as such:
+The border color can be specified in the `colors` array. The first field is the
+active color, second is the inactive color, and the third field is ignored.
+Despite that, it **must** be set a to valid color string.
 ```c
 static const char *colors[][3] = {
     [SchemeSpad] = { "#ff0000", "#00ff00", "#000000" },
 };
 ```
 
-The first field is the active color, second is the inactive color, and the third
-field is ignored. Despite that, it **must** be set a to valid color string.
 
 ## other configuration
 
