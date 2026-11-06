@@ -21,14 +21,15 @@ index 81c3fc0..929a2e7 100644
  #define MODKEY Mod1Mask
  #define TAGKEYS(KEY,TAG) \
 diff --git a/dwm.c b/dwm.c
-index 53b393e..b342457 100644
+index 53b393e..6b50d8d 100644
 --- a/dwm.c
 +++ b/dwm.c
-@@ -65,6 +65,11 @@ enum { NetSupported, NetWMName, NetWMState, NetWMCheck,
+@@ -65,6 +65,12 @@ enum { NetSupported, NetWMName, NetWMState, NetWMCheck,
  enum { WMProtocols, WMDelete, WMState, WMTakeFocus, WMLast }; /* default atoms */
  enum { ClkTagBar, ClkLtSymbol, ClkStatusText, ClkWinTitle,
         ClkClientWin, ClkRootWin, ClkLast }; /* clicks */
 +enum {
++    RLHookNone           = 0,
 +    RLHookUnmanage       = 1 << 0,
 +    RLHookToggleFloating = 1 << 1,
 +    RLHookSetFullscreen  = 1 << 2,
@@ -36,7 +37,7 @@ index 53b393e..b342457 100644
  
  typedef union {
  	int i;
-@@ -131,6 +136,11 @@ struct Monitor {
+@@ -131,6 +137,11 @@ struct Monitor {
  	const Layout *lt[2];
  };
  
@@ -48,7 +49,7 @@ index 53b393e..b342457 100644
  typedef struct {
  	const char *class;
  	const char *instance;
-@@ -192,6 +202,7 @@ static void resize(Client *c, int x, int y, int w, int h, int interact);
+@@ -192,6 +203,7 @@ static void resize(Client *c, int x, int y, int w, int h, int interact);
  static void resizeclient(Client *c, int x, int y, int w, int h);
  static void resizemouse(const Arg *arg);
  static void restack(Monitor *m);
@@ -56,7 +57,7 @@ index 53b393e..b342457 100644
  static void run(void);
  static void scan(void);
  static int sendevent(Client *c, Atom proto);
-@@ -1379,6 +1390,43 @@ restack(Monitor *m)
+@@ -1379,6 +1391,43 @@ restack(Monitor *m)
  	while (XCheckMaskEvent(dpy, EnterWindowMask, &ev));
  }
  
@@ -100,7 +101,7 @@ index 53b393e..b342457 100644
  void
  run(void)
  {
-@@ -1490,6 +1538,7 @@ setfullscreen(Client *c, int fullscreen)
+@@ -1490,6 +1539,7 @@ setfullscreen(Client *c, int fullscreen)
  		c->oldbw = c->bw;
  		c->bw = 0;
  		c->isfloating = 1;
@@ -108,7 +109,7 @@ index 53b393e..b342457 100644
  		resizeclient(c, c->mon->mx, c->mon->my, c->mon->mw, c->mon->mh);
  		XRaiseWindow(dpy, c->win);
  	} else if (!fullscreen && c->isfullscreen){
-@@ -1729,6 +1778,7 @@ togglefloating(const Arg *arg)
+@@ -1729,6 +1779,7 @@ togglefloating(const Arg *arg)
  	if (selmon->sel->isfullscreen) /* no support for fullscreen windows */
  		return;
  	selmon->sel->isfloating = !selmon->sel->isfloating || selmon->sel->isfixed;
@@ -116,7 +117,7 @@ index 53b393e..b342457 100644
  	if (selmon->sel->isfloating)
  		resize(selmon->sel, selmon->sel->x, selmon->sel->y,
  			selmon->sel->w, selmon->sel->h, 0);
-@@ -1783,6 +1833,7 @@ unmanage(Client *c, int destroyed)
+@@ -1783,6 +1834,7 @@ unmanage(Client *c, int destroyed)
  
  	detach(c);
  	detachstack(c);

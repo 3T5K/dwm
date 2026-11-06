@@ -2,14 +2,24 @@
 
 Automatically resets the layout when there are no tiled clients left.
 
-The `rlcfg` variable controls which functions cause a possible reset. It must be
-a bitwise OR (`|`) of the following enumerators
+The `rlcfg` variable controls which functions cause a possible reset.
 ```c
 static const unsigned int rlcfg;
 ```
 
+It must be one, or a bitwise OR (`|`) of the following enumerators:
 ```c
-static const RLMap rlmap[] = {
+enum {
+    RLHookNone           = 0,
+    RLHookUnmanage       = 1 << 0,
+    RLHookToggleFloating = 1 << 1,
+    RLHookSetFullscreen  = 1 << 2,
+};
+```
+
+The `rlmap` array defines 
+```c
+static const RLPair rlmap[] = {
     { .from = monocle, .to = tile },
     { .from = NULL,    .to = tile },
 };
