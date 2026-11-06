@@ -65,6 +65,12 @@ enum { NetSupported, NetWMName, NetWMState, NetWMCheck,
 enum { WMProtocols, WMDelete, WMState, WMTakeFocus, WMLast }; /* default atoms */
 enum { ClkTagBar, ClkLtSymbol, ClkStatusText, ClkWinTitle,
        ClkClientWin, ClkRootWin, ClkLast }; /* clicks */
+enum {
+    RLHookNone           = 0,
+    RLHookUnmanage       = 1 << 0,
+    RLHookToggleFloating = 1 << 1,
+    RLHookSetFullscreen  = 1 << 2,
+};
 
 typedef union {
 	int i;
@@ -134,6 +140,11 @@ struct Monitor {
 };
 
 typedef struct {
+    void (*from)(Monitor *);
+    void (*to)(Monitor *);
+} RLPair;
+
+typedef struct {
 	const char *class;
 	const char *instance;
 	const char *title;
@@ -194,6 +205,7 @@ static void resize(Client *c, int x, int y, int w, int h, int interact);
 static void resizeclient(Client *c, int x, int y, int w, int h);
 static void resizemouse(const Arg *arg);
 static void restack(Monitor *m);
+static void rlayout(Monitor *m, int arg);
 static void run(void);
 static void scan(void);
 static int sendevent(Client *c, Atom proto);
@@ -1406,6 +1418,43 @@ restack(Monitor *m)
 }
 
 void
+rlayout(Monitor *m, int arg)
+{
+    int nc, i, j;
+    Client *c;
+
+    if (!(rlcfg & arg))
+        return;
+
+    for ( nc = 0, c = nexttiled(m->clients)
+        ; c
+        ; ++nc, c = nexttiled(c->next) );
+    if (nc != 0)
+        return;
+
+    for (i = 0; i < LENGTH(rlmap); ++i)
+        if ( m->lt[m->sellt]->arrange == rlmap[i].from
+          && rlmap[i].from != rlmap[i].to )
+            break;
+
+    if (i == LENGTH(rlmap))
+        return;
+
+    for (j = 0; j < LENGTH(layouts); ++j)
+        if (rlmap[i].to == layouts[j].arrange)
+            break;
+
+    if (j == LENGTH(rlmap))
+        return;
+
+    m->sellt ^= 1;
+    m->lt[m->sellt] = layouts + j;
+	strncpy( selmon->ltsymbol
+           , selmon->lt[selmon->sellt]->symbol
+           , sizeof(selmon->ltsymbol) );
+}
+
+void
 run(void)
 {
 	XEvent ev;
@@ -1516,6 +1565,7 @@ setfullscreen(Client *c, int fullscreen)
 		c->oldbw = c->bw;
 		c->bw = 0;
 		c->isfloating = 1;
+        rlayout(c->mon, RLHookSetFullscreen);
 		resizeclient(c, c->mon->mx, c->mon->my, c->mon->mw, c->mon->mh);
 		XRaiseWindow(dpy, c->win);
 	} else if (!fullscreen && c->isfullscreen){
@@ -1755,6 +1805,7 @@ togglefloating(const Arg *arg)
 	if (selmon->sel->isfullscreen) /* no support for fullscreen windows */
 		return;
 	selmon->sel->isfloating = !selmon->sel->isfloating || selmon->sel->isfixed;
+    rlayout(selmon, RLHookToggleFloating);
 	if (selmon->sel->isfloating)
 		resize(selmon->sel, selmon->sel->x, selmon->sel->y,
 			selmon->sel->w, selmon->sel->h, 0);
@@ -1833,6 +1884,7 @@ unmanage(Client *c, int destroyed)
 
 	detach(c);
 	detachstack(c);
+    rlayout(c->mon, RLHookUnmanage);
 	if (!destroyed) {
 		wc.border_width = c->oldbw;
 		XGrabServer(dpy); /* avoid race conditions */
