@@ -58,7 +58,7 @@
 
 /* enums */
 enum { CurNormal, CurResize, CurMove, CurLast }; /* cursor */
-enum { SchemeNorm, SchemeSel }; /* color schemes */
+enum { SchemeNorm, SchemeSel, SchemeExpM, SchemeExpS }; /* color schemes */
 enum { NetSupported, NetWMName, NetWMState, NetWMCheck,
        NetWMFullscreen, NetActiveWindow, NetWMWindowType,
        NetWMWindowTypeDialog, NetClientList, NetLast }; /* EWMH atoms */
@@ -215,6 +215,7 @@ static void spawn(const Arg *arg);
 static void tag(const Arg *arg);
 static void tagmon(const Arg *arg);
 static void tile(Monitor *m);
+static void tilebpaint(void);
 static void togglebar(const Arg *arg);
 static void togglefloating(const Arg *arg);
 static void toggletag(const Arg *arg);
@@ -811,7 +812,38 @@ exstack(const Arg *arg)
     else
         selmon->stacks.stack = !selmon->stacks.stack;
 
+    tilebpaint();
     arrange(selmon);
+}
+
+int
+colstack(Client *c, int i)
+{
+    int nc;
+    Client *x;
+
+    if ( !c || c->mon->lt[c->mon->sellt]->arrange != &tile
+      || !(c->mon->stacks.master || c->mon->stacks.stack) )
+        return 0;
+    
+    for ( nc = 0, x = nexttiled(c->mon->clients)
+        ; x && x != c
+        ; ++nc, x = nexttiled(x->next) );
+
+    if (!x)
+        return 0;
+
+    if (nc >= c->mon->nmaster && c->mon->stacks.stack) {
+        XSetWindowBorder(dpy, c->win, scheme[SchemeExpS][i].pixel);
+        return 1;
+    }
+
+    if (nc < c->mon->nmaster && c->mon->stacks.master) {
+        XSetWindowBorder(dpy, c->win, scheme[SchemeExpM][i].pixel);
+        return 1;
+    }
+
+    return 0;
 }
 
 void
@@ -829,7 +861,8 @@ focus(Client *c)
 		detachstack(c);
 		attachstack(c);
 		grabbuttons(c, 1);
-		XSetWindowBorder(dpy, c->win, scheme[SchemeSel][ColBorder].pixel);
+		if (!colstack(c, ColFg))
+			XSetWindowBorder(dpy, c->win, scheme[SchemeSel][ColBorder].pixel);
 		setfocus(c);
 	} else {
 		XSetInputFocus(dpy, root, RevertToPointerRoot, CurrentTime);
@@ -1092,7 +1125,10 @@ manage(Window w, XWindowAttributes *wa)
 
 	wc.border_width = c->bw;
 	XConfigureWindow(dpy, w, CWBorderWidth, &wc);
-	XSetWindowBorder(dpy, w, scheme[SchemeNorm][ColBorder].pixel);
+	attach(c);
+	if (!colstack(c, ColBg))
+		XSetWindowBorder(dpy, w, scheme[SchemeNorm][ColBorder].pixel);
+	detach(c);
 	configure(c); /* propagates border_width, if size doesn't change */
 	updatewindowtype(c);
 	updatesizehints(c);
@@ -1742,6 +1778,28 @@ tile(Monitor *m)
 }
 
 void
+tilebpaint(void)
+{
+    int i, m, s, x, y;
+    Client *c;
+    Clr *col;
+    
+    if (selmon->lt[selmon->sellt]->arrange != &tile)
+        return;
+
+    m = selmon->stacks.master;
+    s = selmon->stacks.stack;
+    for (i = 0, c = nexttiled(selmon->clients); c; ++i, c = nexttiled(c->next)) {
+        x = i < selmon->nmaster;
+        y = c == selmon->sel;
+        col = (x && m) || (!x && s)
+            ? &scheme[x ? SchemeExpM : SchemeExpS][y ? ColFg : ColBg]
+            : &scheme[y ? SchemeSel  : SchemeNorm][ColBorder        ];
+        XSetWindowBorder(dpy, c->win, col->pixel);
+    }
+}
+
+void
 togglebar(const Arg *arg)
 {
 	selmon->showbar = !selmon->showbar;
@@ -1797,7 +1855,8 @@ unfocus(Client *c, int setfocus)
 	if (!c)
 		return;
 	grabbuttons(c, 0);
-	XSetWindowBorder(dpy, c->win, scheme[SchemeNorm][ColBorder].pixel);
+	if (!colstack(c, ColBg))
+		XSetWindowBorder(dpy, c->win, scheme[SchemeNorm][ColBorder].pixel);
 	if (setfocus) {
 		XSetInputFocus(dpy, root, RevertToPointerRoot, CurrentTime);
 		XDeleteProperty(dpy, root, netatom[NetActiveWindow]);
