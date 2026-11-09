@@ -5,6 +5,7 @@ static const unsigned int borderpx  = 1;        /* border pixel of windows */
 static const unsigned int mgap      = 10;       /* monocle layout gap */
 static const unsigned int ogap      = 30;       /* gap on outer edges */
 static const unsigned int igap      = 10;       /* gap between windows */
+static const unsigned int sgap      = 10;       /* snap gap */
 static const unsigned int snap      = 32;       /* snap pixel */
 static const unsigned int defaulttag= 2;        /* default tag on startup */
 static const int swallowfloating    = 0;        /* 1 means swallow floating windows by default */
