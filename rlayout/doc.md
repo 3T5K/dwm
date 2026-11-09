@@ -34,3 +34,12 @@ static const RLPair rlmap[] = {
 ```sh
 git diff 6.8..rlayout-6.8 > dwm-rlayout-6.8.diff
 ```
+
+### rlayout-pertag-6.8
+
+**Dependencies:**
+- pertag-61bb8b2
+
+```sh
+git diff rlayout-pertag-6.8^^..rlayout-pertag-6.8 > dwm-rlayout-pertag-6.8.diff
+```
