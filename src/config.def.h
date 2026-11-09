@@ -65,6 +65,14 @@ static const int tilezoomcfg
     | TileZoomStMExp
     ;
 
+static const TileNmCtlCallback tilenmctlfallback
+    = tilenmctldefaultfallback;
+
+static const int tilenmctlcfg
+    = TileNmCtlMasterPrefer
+    | TileNmCtlStackPrefer
+    ;
+
 /* tagging */
 static const char *tags[] = { "1", "2", "3", "4", "5", "6", "7", "8", "9" };
 
@@ -116,8 +124,8 @@ static const Key keys[] = {
 	{ MODKEY,                       XK_b,      togglebar,      {0} },
 	{ MODKEY,                       XK_j,      focusstack,     {.i = +1 } },
 	{ MODKEY,                       XK_k,      focusstack,     {.i = -1 } },
-	{ MODKEY,                       XK_i,      incnmaster,     {.i = +1 } },
-	{ MODKEY,                       XK_d,      incnmaster,     {.i = -1 } },
+	{ MODKEY,                       XK_i,      tilenmctl,      {.i = TileNmCtlInc } },
+	{ MODKEY,                       XK_d,      tilenmctl,      {.i = TileNmCtlDec } },
 	{ MODKEY,                       XK_h,      setmfact,       {.f = -0.05} },
 	{ MODKEY,                       XK_l,      setmfact,       {.f = +0.05} },
     { MODKEY,                       XK_x,      exstack,        {0} },
