@@ -180,6 +180,12 @@ enum {
     RStacksStackReset  = 1 << 2,
     RStacksStackKeep   = 1 << 3,
 };
+enum {
+    RMfactResetOnEmptyMaster = 1 << 0,
+    RMfactResetOnEmptyStack  = 1 << 1,
+    RMfactHookArrangeMon     = 1 << 2,
+    RMfactHookTile           = 1 << 3,
+};
 
 typedef union {
 	int i;
@@ -381,6 +387,7 @@ static void resize(Client *c, int x, int y, int w, int h, int interact);
 static void resizeclient(Client *c, int x, int y, int w, int h);
 static void resizemouse(const Arg *arg);
 static void restack(Monitor *m);
+static void rmfact(int arg);
 static void rstacks(void);
 static void run(void);
 static void scan(void);
@@ -657,6 +664,7 @@ arrangemon(Monitor *m)
     Client *c;
 
 	strncpy(m->ltsymbol, m->lt[m->sellt]->symbol, sizeof m->ltsymbol);
+    rmfact(RMfactHookArrangeMon);
     if (m->lt[m->sellt]->arrange)
         m->lt[m->sellt]->arrange(m);
     else
@@ -2085,6 +2093,24 @@ rstacks(void)
 }
 
 void
+rmfact(int arg)
+{
+    Client *c;
+    int nc, mm, ms, mh;
+
+    mh = rmfactcfg & (RMfactHookArrangeMon | RMfactHookTile);
+    if ((mh != RMfactHookArrangeMon && mh != RMfactHookTile) || !(rmfactcfg & arg))
+        return;
+
+    for (nc = 0, c = nexttiled(selmon->clients); c; c = nexttiled(c->next), ++nc);
+
+    mm = rmfactcfg & RMfactResetOnEmptyMaster;
+    ms = rmfactcfg & RMfactResetOnEmptyStack;
+    if (nc == 0 || (mm && selmon->nmaster == 0) || (ms && nc <= selmon->nmaster))
+        selmon->mfact = selmon->pertag->mfacts[selmon->pertag->curtag] = mfact;
+}
+
+void
 run(void)
 {
 	XEvent ev;
@@ -2752,6 +2778,7 @@ tile(Monitor *m)
     int em = m->pertag->exstacks[m->pertag->curtag].master
       , es = m->pertag->exstacks[m->pertag->curtag].stack;
 
+    rmfact(RMfactHookTile);
     rstacks();
 
     for (n = si = 0, xr[0] = xr[1] = NULL, c = nexttiled(m->clients); c; c = nexttiled(c->next), ++n) {
