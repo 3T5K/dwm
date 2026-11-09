@@ -76,6 +76,7 @@
 
 /* enums */
 enum { CurNormal, CurResize, CurMove, CurLast }; /* cursor */
+enum { LtTile, LtFloat, LtMonocle }; /* layouts */
 enum { SchemeNorm, SchemeSel, SchemeSpad, SchemeStatus, SchemeTagsSel,
     SchemeTagsNorm, SchemeInfoSel, SchemeInfoNorm }; /* color schemes */
 enum { NetSupported, NetWMName, NetWMState, NetWMCheck,
@@ -365,6 +366,7 @@ static Client *cprev(Client *c);
 static Client *cprevtiled(Client *c);
 static Monitor *createmon(void);
 static void cswap(Client *x, Client *y);
+static void cyclebetween(const Arg *arg);
 static void cyclefocus(const Arg *arg);
 static void destroynotify(XEvent *e);
 static void detach(Client *c);
@@ -1136,6 +1138,25 @@ cyclefocus(const Arg *arg)
         focus(c);
         restack(selmon);
     }
+}
+
+void
+cyclebetween(const Arg *arg)
+{
+    Layout **i;
+    Arg lt;
+
+    if (!(arg && arg->v))
+        return;
+
+    for (i = (Layout **)arg->v; *i; ++i)
+        if (selmon->lt[selmon->sellt] == *i)
+            break;
+
+    lt.v = *i && i[1]
+         ? i[1]
+         : *(Layout **)(arg->v);
+    setlayout(&lt);
 }
 
 void

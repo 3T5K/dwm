@@ -132,10 +132,16 @@ static const int lockfullscreen = 1; /* 1 will force focus on the fullscreen win
 static const int refreshrate = 120;  /* refresh rate (per second) for client move/resize */
 
 static const Layout layouts[] = {
-	/* symbol     arrange function */
-	{ "[]=",      tile },    /* first entry is default */
-	{ "><>",      NULL },    /* no layout function means floating behavior */
-	{ "[M]",      monocle },
+	/*               symbol     arrange function */
+	[LtTile]    = { "[]=",      tile    }, /* first entry is default */
+	[LtFloat]   = { "><>",      NULL    }, /* no layout function means floating behavior */
+	[LtMonocle] = { "[M]",      monocle },
+};
+
+static const Layout *layoutring[] = {
+    &layouts[LtTile],
+    &layouts[LtMonocle],
+    NULL
 };
 
 static const unsigned int rlcfg
@@ -195,6 +201,7 @@ static const Key keys[] = {
 	{ MODKEY,                       XK_space,  setlayout,      {0} },
 	{ MODKEY|ShiftMask,             XK_space,  togglefloating, {0} },
 	{ MODKEY|ShiftMask,             XK_f,      togglefullscr,  {0} },
+    { MODKEY,                       XK_c,      cyclebetween,   {.v = layoutring } },
 	{ MODKEY,                       XK_0,      view,           {.ui = ~0 } },
 	{ MODKEY|ShiftMask,             XK_0,      tag,            {.ui = ~0 } },
 	{ MODKEY,                       XK_comma,  focusmon,       {.i = -1 } },
