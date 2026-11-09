@@ -174,6 +174,12 @@ enum {
     TileFocusMasterXrayAc = 1 << 8,
     TileFocusStackXrayAc  = 1 << 9,
 };
+enum {
+    RStacksMasterReset = 1 << 0,
+    RStacksMasterKeep  = 1 << 1,
+    RStacksStackReset  = 1 << 2,
+    RStacksStackKeep   = 1 << 3,
+};
 
 typedef union {
 	int i;
@@ -375,6 +381,7 @@ static void resize(Client *c, int x, int y, int w, int h, int interact);
 static void resizeclient(Client *c, int x, int y, int w, int h);
 static void resizemouse(const Arg *arg);
 static void restack(Monitor *m);
+static void rstacks(void);
 static void run(void);
 static void scan(void);
 static int sendevent(Client *c, Atom proto);
@@ -2055,6 +2062,29 @@ restack(Monitor *m)
 }
 
 void
+rstacks(void)
+{
+    Client *c;
+    int nc, mm, ms;
+
+    mm = rstackscfg & (RStacksMasterReset | RStacksMasterKeep);
+    ms = rstackscfg & (RStacksStackReset  | RStacksStackKeep );
+    if ( (mm != RStacksMasterReset && mm != RStacksMasterKeep)
+      || (ms != RStacksStackReset  && ms != RStacksStackKeep ) )
+        return;
+
+    for (nc = 0, c = nexttiled(selmon->clients); c; c = nexttiled(c->next), ++nc);
+    mm = selmon->pertag->exstacks[selmon->pertag->curtag].master && mm == RStacksMasterReset;
+    ms = selmon->pertag->exstacks[selmon->pertag->curtag].stack  && ms == RStacksStackReset ;
+
+    if (mm && (nc == 0 || selmon->nmaster == 0))
+        selmon->pertag->exstacks[selmon->pertag->curtag].master = 0;
+
+    if (ms && (nc == 0 || nc <= selmon->nmaster))
+        selmon->pertag->exstacks[selmon->pertag->curtag].stack = 0;
+}
+
+void
 run(void)
 {
 	XEvent ev;
@@ -2721,6 +2751,8 @@ tile(Monitor *m)
     Client *c, *xr[2];
     int em = m->pertag->exstacks[m->pertag->curtag].master
       , es = m->pertag->exstacks[m->pertag->curtag].stack;
+
+    rstacks();
 
     for (n = si = 0, xr[0] = xr[1] = NULL, c = nexttiled(m->clients); c; c = nexttiled(c->next), ++n) {
         if (m->sel == c)

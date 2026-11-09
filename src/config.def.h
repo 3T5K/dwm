@@ -98,6 +98,11 @@ static const int tilefocuscfg
     | TileFocusHorzOverflow
     ;
 
+static const int rstackscfg
+    = RStacksMasterReset
+    | RStacksStackReset
+    ;
+
 /* tagging */
 static const char *tags[] = { "1", "2", "3", "4", "5", "6", "7", "8", "9" };
 
