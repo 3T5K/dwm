@@ -1447,8 +1447,8 @@ rlayout(Monitor *m, int arg)
     if (j == LENGTH(rlmap))
         return;
 
-    m->sellt ^= 1;
-    m->lt[m->sellt] = layouts + j;
+    m->sellt = m->pertag->sellts[m->pertag->curtag] ^= 1;
+    m->lt[m->sellt] = m->pertag->ltidxs[m->pertag->curtag][m->sellt] = layouts + j;
 	strncpy( selmon->ltsymbol
            , selmon->lt[selmon->sellt]->symbol
            , sizeof(selmon->ltsymbol) );
