@@ -1,0 +1,25 @@
+diff --git a/config.def.h b/config.def.h
+index 81c3fc0..81e7e41 100644
+--- a/config.def.h
++++ b/config.def.h
+@@ -2,6 +2,7 @@
+ 
+ /* appearance */
+ static const unsigned int borderpx  = 1;        /* border pixel of windows */
++static const unsigned int mgap      = 10;       /* monocle layout gap */
+ static const unsigned int snap      = 32;       /* snap pixel */
+ static const int showbar            = 1;        /* 0 means no bar */
+ static const int topbar             = 1;        /* 0 means bottom bar */
+diff --git a/dwm.c b/dwm.c
+index 53b393e..965d4f7 100644
+--- a/dwm.c
++++ b/dwm.c
+@@ -1122,7 +1122,7 @@ monocle(Monitor *m)
+ 	if (n > 0) /* override layout symbol */
+ 		snprintf(m->ltsymbol, sizeof m->ltsymbol, "[%d]", n);
+ 	for (c = nexttiled(m->clients); c; c = nexttiled(c->next))
+-		resize(c, m->wx, m->wy, m->ww - 2 * c->bw, m->wh - 2 * c->bw, 0);
++		resize(c, m->wx + mgap, m->wy + mgap, m->ww - 2 * (c->bw + mgap), m->wh - 2 * (c->bw + mgap), 0);
+ }
+ 
+ void
