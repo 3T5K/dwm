@@ -90,7 +90,7 @@ clean:
 	rm -f $(BLD_DIR)/*
 
 clean-src:
-	rm -f $(SRC_DIR)/*.orig $(SRC_DIR)/*.rej
+	rm -f $(DWMCFG) $(SRC_DIR)/*.orig $(SRC_DIR)/*.rej
 
 # This target can't be run before $(DWMCFG) in a single
 # make invocation due to it removing metadata generated
