@@ -84,6 +84,18 @@ static const int tilemovecfg
     | TileMoveStackTop
     ;
 
+static const TileFocusCallback tilefocusfallback
+    = tilefocusdefaultfallback;
+
+static const int tilefocuscfg
+    = TileFocusMasterXrayAc
+    | TileFocusMasterLast
+    | TileFocusStackXrayAc
+    | TileFocusStackLast
+    | TileFocusVertOverflow
+    | TileFocusHorzOverflow
+    ;
+
 /* tagging */
 static const char *tags[] = { "1", "2", "3", "4", "5", "6", "7", "8", "9" };
 
@@ -133,16 +145,18 @@ static const Key keys[] = {
 	{ MODKEY,                       XK_p,      spawn,          {.v = dmenucmd } },
 	{ MODKEY|ShiftMask,             XK_Return, spawn,          {.v = termcmd } },
 	{ MODKEY,                       XK_b,      togglebar,      {0} },
-	{ MODKEY,                       XK_j,      focusstack,     {.i = +1 } },
-	{ MODKEY,                       XK_k,      focusstack,     {.i = -1 } },
+    { MODKEY,                       XK_h,      tilefocus,      {.i = 'W' } },
+    { MODKEY,                       XK_j,      tilefocus,      {.i = 'S' } },
+    { MODKEY,                       XK_k,      tilefocus,      {.i = 'N' } },
+    { MODKEY,                       XK_l,      tilefocus,      {.i = 'E' } },
 	{ MODKEY,                       XK_i,      tilenmctl,      {.i = TileNmCtlInc } },
 	{ MODKEY,                       XK_d,      tilenmctl,      {.i = TileNmCtlDec } },
     { MODKEY|ShiftMask,             XK_h,      tilemove,       {.i = 'W' } },
     { MODKEY|ShiftMask,             XK_j,      tilemove,       {.i = 'S' } },
     { MODKEY|ShiftMask,             XK_k,      tilemove,       {.i = 'N' } },
     { MODKEY|ShiftMask,             XK_l,      tilemove,       {.i = 'E' } },
-	{ MODKEY,                       XK_h,      setmfact,       {.f = -0.05} },
-	{ MODKEY,                       XK_l,      setmfact,       {.f = +0.05} },
+	{ MODKEY|ShiftMask,             XK_h,      setmfact,       {.f = -0.05} },
+	{ MODKEY|ShiftMask,             XK_l,      setmfact,       {.f = +0.05} },
     { MODKEY,                       XK_x,      exstack,        {0} },
 	{ MODKEY,                       XK_Return, tilezoom,       {0} },
 	{ MODKEY,                       XK_Tab,    view,           {0} },
