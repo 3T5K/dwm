@@ -46,6 +46,8 @@ static const Spad sp_defs[] =
     { "st2", SP_C_NONE, SP_R_XYWH(0.1, 0.1, 0.8, 0.8), SP_M_PID, SP_CMD("st") }
 };
 
+static const TileFFBCallback tileffbfallback = NULL;
+
 static const int tmpnmdectil = 1;
 
 static const int tmpnmcfg

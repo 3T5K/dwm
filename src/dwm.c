@@ -313,6 +313,8 @@ typedef void (*TileMoveCallback)(const Arg *);
 
 typedef void(*TileFocusCallback)(const Arg *);
 
+typedef Client *(*TileFFBCallback)(Client *);
+
 /* function declarations */
 static void applyrules(Client *c);
 static int applysizehints(Client *c, int *x, int *y, int *w, int *h, int interact);
@@ -402,6 +404,7 @@ static void sp_toggle(const Arg *arg);
 static void tag(const Arg *arg);
 static void tagmon(const Arg *arg);
 static void tile(Monitor *m);
+static Client *tileffb(Client *c);
 static void tilefocus(const Arg *arg);
 static void tilefocusdefaultfallback(const Arg *arg);
 static TileInfo tileinfo(void);
@@ -2826,6 +2829,77 @@ tileinfo(void)
     return ti;
 }
 
+Client *
+tileffb(Client *c)
+{
+    TileInfo ti;
+    Client *x, *y;
+    int i, ms, mn, md;
+
+    if (selmon->lt[selmon->sellt]->arrange != &tile)
+        return tileffbfallback ? tileffbfallback(c) : NULL;
+
+    if (!c || selmon->sel != c)
+        return NULL;
+
+    ms = tmpnmcfg & (TmpNmPrefer | TmpNmDefer | TmpNmNone);
+    mn = (tmpnmcfg & TmpNmNoMove)  != 0;
+    md = (tmpnmcfg & TmpNmAndDeny) != 0;
+    if ( ( ms != TmpNmPrefer && ms != TmpNmDefer && ms != TmpNmNone )
+      || ( mn && !(md && ms == TmpNmPrefer) ) )
+        return NULL;
+
+    if (c->isfloating) {
+        for ( x = c->mon->stack
+            ; x && (!x->isfloating || !ISVISIBLE(x) || x == c)
+            ; x = x->snext
+            );
+        return x;
+    }
+
+    ti = tileinfo();
+    if (ti.nc == 1)
+        return NULL;
+
+    if (ti.xs[ti.st]) {
+        for (x = selmon->stack; x; x = x->snext)
+            if (ISVISIBLE(x) && !x->isfloating && x != c) {
+                for ( i = 0, y = nexttiled(selmon->clients)
+                    ; y && y != x
+                    ; y = nexttiled(y->next), ++i
+                    );
+                if ((int[2]){ i <  selmon->nmaster
+                            , i >= selmon->nmaster }[ti.st]) {
+                    return x;
+                }
+            }
+    }
+
+    if (!ti.st) {
+        if (ti.xs[1]) {
+            if ( selmon->nmaster > MAX(tmpnmdectil, 0)
+              || (md && ms == TmpNmPrefer                         )
+              || (md && ms == TmpNmDefer  && ti.xs[1] == ti.bs[1]
+                                          && ti.xs[1] == ti.ts[1] )
+              || (md && ms == TmpNmNone   && ti.xs[1] == ti.ts[1] ) )
+                return selmon->sel == ti.bs[0]
+                    ? ti.cs[0] ? ti.cs[0] : ti.xs[1]
+                    : ti.cs[1];
+
+            if (ms == TmpNmPrefer)
+                return selmon->sel == ti.bs[0] ? ti.xs[1] : ti.cs[1];
+
+            if ( ms == TmpNmDefer     && ti.ts[1] == ti.xs[1]
+              && ti.bs[1] != ti.xs[1] && ti.bs[0] == selmon->sel )
+                return nexttiled(ti.xs[1]->next);
+
+        } else if (selmon->nmaster > MAX(tmpnmdectil, 0))
+            return (x = ti.cs[selmon->sel != ti.bs[0]]) ? x : ti.cs[1];
+    }
+
+    return ti.cs[1] ? ti.cs[1] : ti.cs[0];
+}
+
 void
 tmpnmdec(Client *c, int arg)
 {
@@ -3272,6 +3346,7 @@ unfocus(Client *c, int setfocus)
 void
 unmanage(Client *c, int destroyed)
 {
+    Client *nc = NULL;
     SpState *sps;
 	Monitor *m = c->mon;
 	XWindowChanges wc;
@@ -3302,6 +3377,7 @@ unmanage(Client *c, int destroyed)
 		return;
 	}
 
+    nc = tileffb(c);
     tmpnmdec(c, TmpNmHookUnmanage);
 	detach(c);
 	detachstack(c);
@@ -3323,7 +3399,7 @@ unmanage(Client *c, int destroyed)
 
 	if (!s) {
 		arrange(m);
-		focus(NULL);
+    	focus(nc);
 		updateclientlist();
 	}
 }
