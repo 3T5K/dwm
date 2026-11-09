@@ -46,6 +46,16 @@ static const Spad sp_defs[] =
     { "st2", SP_C_NONE, SP_R_XYWH(0.1, 0.1, 0.8, 0.8), SP_M_PID, SP_CMD("st") }
 };
 
+static const int tmpnmdectil = 1;
+
+static const int tmpnmcfg
+    = TmpNmRespectNmaster
+    | TmpNmPrefer
+    | TmpNmHookUnmanage
+    | TmpNmHookToggleFloating
+    | TmpNmHookSetFullscreen
+    ;
+
 /* tagging */
 static const char *tags[] = { "1", "2", "3", "4", "5", "6", "7", "8", "9" };
 

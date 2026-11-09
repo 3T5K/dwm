@@ -108,6 +108,17 @@ enum {
     SP_C_LAYOUT = 1 << 1,
     SP_C_CLOSE  = 1 << 2,
 };
+enum {
+    TmpNmRespectNmaster     = 1 << 0,
+    TmpNmHookUnmanage       = 1 << 1,
+    TmpNmHookToggleFloating = 1 << 2,
+    TmpNmHookSetFullscreen  = 1 << 3,
+    TmpNmPrefer             = 1 << 4,
+    TmpNmDefer              = 1 << 5,
+    TmpNmNone               = 1 << 6,
+    TmpNmAndDeny            = 1 << 7,
+    TmpNmNoMove             = 1 << 8,
+};
 
 typedef union {
 	int i;
@@ -328,6 +339,7 @@ static void tag(const Arg *arg);
 static void tagmon(const Arg *arg);
 static void tile(Monitor *m);
 static TileInfo tileinfo(void);
+static void tmpnmdec(Client *c, int arg);
 static void togglebar(const Arg *arg);
 static void togglefloating(const Arg *arg);
 static void togglefullscr(const Arg *arg);
@@ -2067,6 +2079,7 @@ setfullscreen(Client *c, int fullscreen)
             return;
 		XChangeProperty(dpy, c->win, netatom[NetWMState], XA_ATOM, 32,
 			PropModeReplace, (unsigned char*)&netatom[NetWMFullscreen], 1);
+        tmpnmdec(c, TmpNmHookSetFullscreen);
 		c->isfullscreen = 1;
 		c->oldstate = c->isfloating;
 		c->oldbw = c->bw;
@@ -2735,6 +2748,42 @@ tileinfo(void)
 }
 
 void
+tmpnmdec(Client *c, int arg)
+{
+    TileInfo ti;
+    int ms, mn, md, d;
+
+    if ( !c || selmon->sel != c || !(tmpnmcfg & arg) || c->isfloating
+      || !ISVISIBLE(c) || selmon->lt[selmon->sellt]->arrange != &tile )
+        return;
+
+    ms = tmpnmcfg & (TmpNmPrefer | TmpNmDefer | TmpNmNone);
+    mn = (tmpnmcfg & TmpNmNoMove)  != 0;
+    md = (tmpnmcfg & TmpNmAndDeny) != 0;
+    if ( ( ms != TmpNmPrefer && ms != TmpNmDefer && ms != TmpNmNone )
+      || ( mn && !(md && ms == TmpNmPrefer) ) )
+        return;
+
+    ti = tileinfo();
+
+    if (!ti.st && tmpnmdectil > 0 && selmon->nmaster <= tmpnmdectil && ti.xs[1]) {
+        d = ti.ts[1] == ti.xs[1];
+        if (ms == TmpNmDefer && d && !(d = ti.ts[1] == ti.bs[1]))
+            cswap(ti.xs[1], nexttiled(ti.xs[1]->next));
+        else if (ms == TmpNmPrefer && ((d = 1), !mn))
+            cswap(ti.ts[1], ti.xs[1]);
+        if (md && d)
+            selmon->pertag->nmasters[selmon->pertag->curtag] = --selmon->nmaster;
+        return;
+    }
+
+    c->mon->nmaster = selmon->pertag->nmasters[selmon->pertag->curtag]
+        = (ti.nc == 1 && (tmpnmcfg & TmpNmRespectNmaster)) ? nmaster
+        : (ti.nc < selmon->nmaster) ? ti.nc - (ti.nc > MAX(tmpnmdectil, 0))
+        : selmon->nmaster - (!ti.st && selmon->nmaster > MAX(tmpnmdectil, 0));
+}
+
+void
 togglebar(const Arg *arg)
 {
 	selmon->showbar = selmon->pertag->showbars[selmon->pertag->curtag] = !selmon->showbar;
@@ -2750,6 +2799,7 @@ togglefloating(const Arg *arg)
 		return;
 	if (selmon->sel->isfullscreen) /* no support for fullscreen windows */
 		return;
+    tmpnmdec(selmon->sel, TmpNmHookToggleFloating);
 	selmon->sel->isfloating = !selmon->sel->isfloating || selmon->sel->isfixed;
 	if (selmon->sel->isfloating) {
         xraycfg(selmon->sel, XrayGrpNone, -1);
@@ -2864,6 +2914,7 @@ unmanage(Client *c, int destroyed)
 		return;
 	}
 
+    tmpnmdec(c, TmpNmHookUnmanage);
 	detach(c);
 	detachstack(c);
 	if (!destroyed) {
