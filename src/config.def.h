@@ -138,6 +138,17 @@ static const Layout layouts[] = {
 	{ "[M]",      monocle },
 };
 
+static const unsigned int rlcfg
+    = RLHookUnmanage
+    | RLHookToggleFloating
+    | RLHookSetFullscreen
+    ;
+
+static const RLPair rlmap[] = {
+    { .from = monocle, .to = tile },
+    { .from = NULL,    .to = tile },
+};
+
 /* key definitions */
 #define MODKEY Mod1Mask
 #define TAGKEYS(KEY,TAG) \

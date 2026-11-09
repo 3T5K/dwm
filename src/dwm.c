@@ -186,6 +186,12 @@ enum {
     RMfactHookArrangeMon     = 1 << 2,
     RMfactHookTile           = 1 << 3,
 };
+enum {
+    RLHookNone           = 0,
+    RLHookUnmanage       = 1 << 0,
+    RLHookToggleFloating = 1 << 1,
+    RLHookSetFullscreen  = 1 << 2,
+};
 
 typedef union {
 	int i;
@@ -261,6 +267,11 @@ struct Monitor {
 	const Layout *lt[2];
 	Pertag *pertag;
 };
+
+typedef struct {
+    void (*from)(Monitor *);
+    void (*to)(Monitor *);
+} RLPair;
 
 typedef struct {
 	const char *class;
@@ -388,6 +399,7 @@ static void resizeclient(Client *c, int x, int y, int w, int h);
 static void resizemouse(const Arg *arg);
 static void restack(Monitor *m);
 static void rmfact(int arg);
+static void rlayout(Monitor *m, int arg);
 static void rstacks(void);
 static void run(void);
 static void scan(void);
@@ -2111,6 +2123,43 @@ rmfact(int arg)
 }
 
 void
+rlayout(Monitor *m, int arg)
+{
+    int nc, i, j;
+    Client *c;
+
+    if (!(rlcfg & arg))
+        return;
+
+    for ( nc = 0, c = nexttiled(m->clients)
+        ; c
+        ; ++nc, c = nexttiled(c->next) );
+    if (nc != 0)
+        return;
+
+    for (i = 0; i < LENGTH(rlmap); ++i)
+        if ( m->lt[m->sellt]->arrange == rlmap[i].from
+          && rlmap[i].from != rlmap[i].to )
+            break;
+
+    if (i == LENGTH(rlmap))
+        return;
+
+    for (j = 0; j < LENGTH(layouts); ++j)
+        if (rlmap[i].to == layouts[j].arrange)
+            break;
+
+    if (j == LENGTH(rlmap))
+        return;
+
+    m->sellt = m->pertag->sellts[m->pertag->curtag] ^= 1;
+    m->lt[m->sellt] = m->pertag->ltidxs[m->pertag->curtag][m->sellt] = layouts + j;
+	strncpy( selmon->ltsymbol
+           , selmon->lt[selmon->sellt]->symbol
+           , sizeof(selmon->ltsymbol) );
+}
+
+void
 run(void)
 {
 	XEvent ev;
@@ -2225,6 +2274,7 @@ setfullscreen(Client *c, int fullscreen)
 		c->bw = 0;
 		c->isfloating = 1;
         xraycfg(c, XrayGrpNone, -1);
+        rlayout(c->mon, RLHookSetFullscreen);
 		resizeclient(c, c->mon->mx, c->mon->my, c->mon->mw, c->mon->mh);
 		XRaiseWindow(dpy, c->win);
 	} else if (!fullscreen && c->isfullscreen){
@@ -3323,6 +3373,7 @@ togglefloating(const Arg *arg)
 		return;
     tmpnmdec(selmon->sel, TmpNmHookToggleFloating);
 	selmon->sel->isfloating = !selmon->sel->isfloating || selmon->sel->isfixed;
+    rlayout(selmon, RLHookToggleFloating);
 	if (selmon->sel->isfloating) {
         xraycfg(selmon->sel, XrayGrpNone, -1);
 		resize(selmon->sel, selmon->sel->x, selmon->sel->y,
@@ -3441,6 +3492,7 @@ unmanage(Client *c, int destroyed)
     tmpnmdec(c, TmpNmHookUnmanage);
 	detach(c);
 	detachstack(c);
+    rlayout(c->mon, RLHookUnmanage);
 	if (!destroyed) {
 		wc.border_width = c->oldbw;
 		XGrabServer(dpy); /* avoid race conditions */
