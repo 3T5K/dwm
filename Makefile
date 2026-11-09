@@ -16,10 +16,11 @@ INS_DIR	   ?= /usr/local
 BIN_DIR	   ?= bin
 MAN_DIR	   ?= share/man
 
-PC_DEPS    := freetype2 x11 xft xinerama fontconfig
+PC_DEPS    := freetype2 x11 xft xinerama fontconfig x11-xcb xcb-res
 
          CFLAGS   ?= -Werror -Os
 override CFLAGS   += -std=c99 -Wall -Wpedantic
+override CFLAGS   += -Wno-unused-result
 override CFLAGS   += -Wno-unused-function
 override CFLAGS   += -Wno-constant-logical-operand
 override CFLAGS   += -Wno-deprecated-declarations
