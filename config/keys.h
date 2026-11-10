@@ -29,6 +29,9 @@
 	{ MOD|SHIFT,      KEY, tag,        UI(1 << TAG) }, \
 	{ MOD|CTRL|SHIFT, KEY, toggletag,  UI(1 << TAG) },
 
+static char        dmenumon[2] = "0";
+static const char *dmenucmd[]  = { "dmenu_run", "-m", dmenumon, NULL };
+
 static const Key keys[] =
 {
     /* General */
@@ -41,7 +44,7 @@ static const Key keys[] =
 
     /* Applications */
     { MOD, XK_w,      spawn, CMD("firefox-bin") },
-    { MOD, XK_d,      spawn, CMD("dmenu_run")   },
+    { MOD, XK_d,      spawn, V(dmenucmd)        },
     { MOD, XK_a,      spawn, CMD("i3lock")      },
     { MOD, XK_Return, spawn, CMD("alacritty")   },
 
@@ -57,7 +60,7 @@ static const Key keys[] =
 	{ MOD|SHIFT, XK_z,   setlayout,    V(&layouts[LtFloat  ]) },
 	{ MOD,       XK_g,   setlayout,    V(&layouts[LtMonocle]) },
     { MOD,       XK_c,   cyclebetween, V(layoutring0)         },
-	{ MOD|SHIFT, XK_tab, setlayout,    NIL                    },
+	{ MOD|SHIFT, XK_Tab, setlayout,    NIL                    },
 
     /* Changing Focus */
     { MOD, XK_o, cyclefocus, I(CyclePrev | CycleFloating) },
@@ -107,7 +110,7 @@ static const Key keys[] =
     { META, XK_7, sp_toggle, V("snd")   },
     { META, XK_8, sp_toggle, V("sys")   },
     { META, XK_9, sp_toggle, V("tor")   },
-}
+};
 
 static const Button buttons[] =
 {
@@ -126,7 +129,4 @@ static const Button buttons[] =
 	{ ClkWinTitle, 0, CLK_MIDDLE, tilezoom, NIL },
 
 	{ ClkStatusText, 0, CLK_MIDDLE, spawn, V("alacritty") },
-}
-
-static char dmenumon[2] = "0"; /* component of dmenucmd, manipulated in spawn() */
-static const char *dmenucmd[] = { "dmenu_run", "-m", dmenumon, "-fn", dmenufont, "-nb", col_gray1, "-nf", col_gray3, "-sb", col_cyan, "-sf", col_gray4, NULL };
+};
