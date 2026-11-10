@@ -26,8 +26,8 @@ static const int          swallowfloating = 0   ;
 
 static const char *fonts[] =
 {
+    "CaskaydiaCoveNerdFont:size=14",
     "JetBrainsMonoNerdFont:size=13",
-    "CaskaydiaCoveNerdFont:size=13",
     "monospace:size=10"
 };
 
