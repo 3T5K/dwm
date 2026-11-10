@@ -21,7 +21,7 @@ static const int          nmaster         = 1   ;
 static const int          resizehints     = 1   ;
 static const int          lockfullscreen  = 1   ;
 static const int          refreshrate     = 60  ;
-static const int          tmpnmdectil     = 0   ;
+static const int          tmpnmdectil     = 1   ;
 static const int          swallowfloating = 0   ;
 
 static const char *fonts[] =
