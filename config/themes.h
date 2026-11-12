@@ -6,12 +6,12 @@
  */
 
 #ifndef DWM_THEME
-#  define DWM_THEME catppuccin
+#  define DWM_THEME 1
 #endif
 
 #define COL_NIL "#000000"
 
-#if DWM_THEME == catppuccin
+#if DWM_THEME == 1 /* Catppuccin */
 #  define COL_BORDER_ACTIVE       "#cba6f7"
 #  define COL_BORDER_NORMAL       "#1e1e2e"
 #  define COL_STATUSBAR_TEXT      "#cba6f7"
