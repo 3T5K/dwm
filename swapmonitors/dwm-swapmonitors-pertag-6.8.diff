@@ -1,17 +1,17 @@
 diff --git a/config.def.h b/config.def.h
-index 81c3fc0..2658333 100644
+index 81c3fc0..b1c7e6a 100644
 --- a/config.def.h
 +++ b/config.def.h
 @@ -86,6 +86,7 @@ static const Key keys[] = {
  	{ MODKEY,                       XK_period, focusmon,       {.i = +1 } },
  	{ MODKEY|ShiftMask,             XK_comma,  tagmon,         {.i = -1 } },
  	{ MODKEY|ShiftMask,             XK_period, tagmon,         {.i = +1 } },
-+        { MODKEY|ShiftMask,             XK_apostrophe,  swapmon,   {0} },
++    { MODKEY,                       XK_grave,  swapmon,        {.i = +1 } },
  	TAGKEYS(                        XK_1,                      0)
  	TAGKEYS(                        XK_2,                      1)
  	TAGKEYS(                        XK_3,                      2)
 diff --git a/dwm.c b/dwm.c
-index 53b9d4a..a5e15dc 100644
+index 53b9d4a..9fbd5c1 100644
 --- a/dwm.c
 +++ b/dwm.c
 @@ -234,6 +234,7 @@ static int xerror(Display *dpy, XErrorEvent *ee);
@@ -22,24 +22,36 @@ index 53b9d4a..a5e15dc 100644
  
  /* variables */
  static const char broken[] = "broken";
-@@ -2216,6 +2217,64 @@ zoom(const Arg *arg)
+@@ -2216,6 +2217,80 @@ zoom(const Arg *arg)
  	pop(c);
  }
  
 +void
 +swapmon(const Arg *arg)
 +{
-+    Monitor *m1, *m2, *i;
++    Monitor *arr[2], *m1, *m2, *i;
++    int x;
 +
-+    if (mons->next == NULL)
++    if (!arg || !mons->next)
 +        return;
 +
-+    m1 = mons;
-+    m2 = mons->next;
++    m1 = selmon;
 +
-+    unsigned int tmp = m1->tagset[m1->seltags];
-+    m1->tagset[m1->seltags] = m2->tagset[m2->seltags];
-+    m2->tagset[m2->seltags] = tmp;
++    for ( m2 = NULL, i = mons
++        ; i && i != m1
++        ; m2 = i, i = i->next );
++
++    if ((arg->i > 0 && m1->next) || !m2)
++        m2 = m1->next;
++
++    if (selmon->sel)
++        unfocus(selmon->sel, 1);
++
++    unsigned int tmp_ts[2] = { m1->tagset[0], m1->tagset[1] };
++    m1->tagset[0] = m2->tagset[0];
++    m1->tagset[1] = m2->tagset[1];
++    m2->tagset[0] = tmp_ts[0];
++    m2->tagset[1] = tmp_ts[1];
 +
 +    const Layout *tmp_lt[2] = { m1->lt[0], m1->lt[1] };
 +    m1->lt[0] = m2->lt[0];
@@ -67,20 +79,24 @@ index 53b9d4a..a5e15dc 100644
 +    SWAP_(float, mfact);
 +    SWAP_(int, nmaster);
 +    SWAP_(unsigned int, sellt);
++    SWAP_(unsigned int, seltags);
 +
 +#undef SWAP_
 +
 +    focus(NULL);
-+    for (i = mons; i; i = i->next) {
-+        updatebarpos(i);
-+        XMoveResizeWindow( dpy
-+                         , i->barwin
-+                         , i->wx
-+                         , i->by
-+                         , i->ww
-+                         , bh
-+                         );
-+        arrange(i);
++
++    arr[0] = m1; arr[1] = m2;
++    for (x = 0; x < 2; ++x) {
++        updatebarpos(arr[x]);
++        XMoveResizeWindow(
++            dpy,
++            arr[x]->barwin,
++            arr[x]->wx,
++            arr[x]->by,
++            arr[x]->ww,
++            bh
++        );
++        arrange(arr[x]);
 +    }
 +}
 +
