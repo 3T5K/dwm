@@ -18,8 +18,14 @@ Swapped fields:
 
 Example binding in `keys`:
 ```c
-{ MODKEY|ShiftMask, XK_apostrophe, swapmon, {0} },
+{ MODKEY|ShiftMask, XK_grave, swapmon, {.i = +1} },
 ```
+
+When the argument to `swapmon` is an integer greater than 0, the focused monitor
+is swapped with the next monitor. If there is not one, the previous one is used
+instead. If the argument is less than, or equal to 0, the focused monitor is
+swapped with the previous monitor. If there is not one, the next one is used
+instead.
 
 ## swapmonitors
 
