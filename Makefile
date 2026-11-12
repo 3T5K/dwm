@@ -2,65 +2,64 @@
 ### dwm - dynamic window manager ###
 ####################################
 
-VERSION  := 6.8
-EXE      := dwm
-CC       := gcc
+VERSION    ?= 6.8
+EXE        ?= dwm
 
-BLD_DIR  := build
-SRC_DIR  := src
-CFG_DIR  := config
-INS_DIR  := /usr/local
-BIN_DIR  := $(INS_DIR)/bin
-MAN_DIR  := $(INS_DIR)/share/man/man1
+PKG_CONFIG ?= pkg-config
 
-NAMES    := drw dwm util
-SOURCES  := $(addprefix $(SRC_DIR)/,$(addsuffix .c,$(NAMES)))
-OBJECTS  := $(addprefix $(BLD_DIR)/,$(addsuffix .o,$(NAMES)))
-CONFIGS  := $(patsubst $(CFG_DIR)/%,%,$(shell find $(CFG_DIR) -type f 2>/dev/null | sort))
-DWMCFG   := $(SRC_DIR)/config.h
+BLD_DIR	   ?= build
+SRC_DIR	   ?= src
+CFG_DIR	   ?= config
+INS_DIR	   ?= /usr/local
+BIN_DIR	   ?= bin
+MAN_DIR	   ?= share/man
 
-INCLUDES := -I/usr/include/freetype2 \
-			-I/usr/X11R6/include \
-			-I$(CFG_DIR)
-CPPFLAGS := -D_DEFAULT_SOURCE \
-			-D_BSD_SOURCE \
-			-D_XOPEN_SOURCE=700L \
-			-DVERSION=\"$(VERSION)\" \
-			-DXINERAMA
-CFLAGS   := -std=c99 -pedantic -Wall \
-			-Wno-unused-function \
-			-Wno-deprecated-declarations -Os \
-			$(INCLUDES) $(CPPFLAGS)
-LDFLAGS  := -L/usr/X11R6/lib -lX11 \
-			-lXinerama \
-			-lfontconfig -lXft
+PC_DEPS    := freetype2 x11 xft xinerama fontconfig
 
-ERR = $(shell mkdir -p $(BLD_DIR) $(CFG_DIR) 2>&1)
-ifneq ($(ERR),)
-$(error $(ERR))
-endif
+         CFLAGS   ?= -std=c99 -Werror -Os
+override CFLAGS   += -Wall -Wpedantic
+override CFLAGS   += -Wno-unused-functions
+override CFLAGS   += -Wno-deprecated-declarations
 
-CFG_IDX := $(shell HIDDEN= $(SRC_DIR)/trackdir.sh $(CFG_DIR) $(BLD_DIR))
-ifneq ($(filter ERROR:%,$(CFG_IDX)),)
-$(error $(CFG_IDX))
-endif
+		 CPPFLAGS ?=
+override CPPFLAGS += $(shell $(PKG_CONFIG) --cflags $(PC_DEPS))
+override CPPFLAGS += -I$(CFG_DIR)
+override CPPFLAGS += -D_DEFAULT_SOURCE -D_BSD_SOURCE -DXINERAMA
+override CPPFLAGS += -D_XOPEN_SOURCE=700L -DVERSION=\"$(VERSION)\"
 
-$(BLD_DIR)/%.o: $(SRC_DIR)/%.c
-	$(CC) -o $@ -c $(CFLAGS) $<
+LDFLAGS    ?=
+LDLIBS     := $(shell $(PKG_CONFIG) --libs $(PC_DEPS))
 
-$(DWMCFG): $(CFG_IDX)
+NAMES      := drw dwm util
+SOURCES    := $(addprefix $(SRC_DIR)/,$(addsuffix .c,$(NAMES)))
+OBJECTS    := $(addprefix $(BLD_DIR)/,$(addsuffix .o,$(NAMES)))
+CONFIGS    := $(patsubst $(CFG_DIR)/%,%,$(shell find $(CFG_DIR) -type f 2>/dev/null | sort))
+BLD_CFG    := $(SRC_DIR)/config.h
+CFG_IDX    := $(BLD_DIR)/.$(CFG_DIR).idx
+
+$(CFG_DIR) $(BLD_DIR):
+	mkdir -p $@
+
+_FORCE:
+$(CFG_IDX): _FORCE | $(CFG_DIR) $(BLD_DIR)
+	@HIDDEN= $(SRC_DIR)/trackdir.sh $(CFG_DIR) $(BLD_DIR) 1>/dev/null
+
+$(BLD_CFG): $(CFG_IDX)
 	@if test -n "$(strip $(CONFIGS))"; then \
 		printf '#include <%s>\n' $(CONFIGS) > $@; \
 	else \
 		cp $(SRC_DIR)/config.def.h $@; \
 	fi
 
-$(OBJECTS): $(DWMCFG)
+$(BLD_DIR)/%.o: $(SRC_DIR)/%.c | $(BLD_DIR)
+	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ -c $<
+
+$(OBJECTS): $(BLD_CFG)
 
 $(BLD_DIR)/$(EXE): $(OBJECTS)
-	$(CC) -o $@ $(OBJECTS) $(LDFLAGS)
+	$(CC) $(LDFLAGS) $(LDLIBS) -o $@ $(OBJECTS) 
 
-build: $(BLD_DIR)/$(EXE)
+$(EXE): $(BLD_DIR)/$(EXE)
 
 dist:
 	@tar --create \
@@ -86,29 +85,30 @@ get-config:
 		| grep '^\([[:digit:]]\|[[:alpha:]]\)\+ config:' \
 		| sed 's/config//'
 
-clean:
-	rm -f $(BLD_DIR)/*
+clean-bld:
+	rm -rf $(BLD_DIR)
 
 clean-src:
-	rm -f $(DWMCFG) $(SRC_DIR)/*.orig $(SRC_DIR)/*.rej
+	rm -f $(BLD_CFG) $(SRC_DIR)/*.orig $(SRC_DIR)/*.rej
 
-# This target can't be run before $(DWMCFG) in a single
-# make invocation due to it removing metadata generated
-# by trackdir.sh which $(DWMCFG) relies on.
-clean-all: clean-src
-	find $(BLD_DIR) -type f -exec rm -f {} +
+clean: clean-bld clean-src
 
-install: build
-	mkdir -p $(BIN_DIR) $(MAN_DIR)
-	cp -f $(BLD_DIR)/$(EXE) $(BIN_DIR)
+install: $(EXE)
+	mkdir -p $(INS_DIR)/$(BIN_DIR) $(INS_DIR)/$(MAN_DIR)/man1
+	cp -f $(BLD_DIR)/$(EXE) $(INS_DIR)/$(BIN_DIR)/$(EXE)
 	sed "s/VERSION/$(VERSION)/g" \
 		< $(SRC_DIR)/dwm.1 \
-		> $(MAN_DIR)/$(EXE).1
-	chmod 755 $(BIN_DIR)/$(EXE)
-	chmod 644 $(MAN_DIR)/$(EXE).1
+		> $(INS_DIR)/$(MAN_DIR)/man1/$(EXE).1
+	chmod 755 $(INS_DIR)/$(BIN_DIR)/$(EXE)
+	chmod 644 $(INS_DIR)/$(MAN_DIR)/man1/$(EXE).1
 
 uninstall:
-	rm -f $(BIN_DIR)/$(EXE) $(MAN_DIR)/$(EXE).1
+	rm -f $(INS_DIR)/$(BIN_DIR)/$(EXE) \
+		  $(INS_DIR)/$(MAN_DIR)/man1/$(EXE).1
 
-.PHONY: build dist get-applied get-added get-config clean clean-src clean-all install uninstall
-.DEFAULT_GOAL := build
+.PHONY: _FORCE $(EXE) dist \
+		get-applied get-added get-config \
+		clean-bld clean-src clean \
+		install uninstall
+
+.DEFAULT_GOAL := $(EXE)

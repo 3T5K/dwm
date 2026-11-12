@@ -5,7 +5,7 @@ devino() {
 }
 
 err() {
-    echo "ERROR:" "$(basename "${0}"):" "${@}"
+    echo "ERROR:" "$(basename "${0}"):" "${@}" 1>&2
     exit 1
 }
 
