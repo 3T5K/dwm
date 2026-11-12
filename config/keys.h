@@ -30,7 +30,7 @@
 	{ MOD|CTRL|SHIFT, KEY, toggletag,  UI(1 << TAG) },
 
 static char        dmenumon[2] = "0";
-static const char *dmenucmd[]  = { "dmenu_run", "-m", dmenumon, NULL };
+static const char *dmenucmd[]  = { NULL };
 
 static const Key keys[] =
 {
@@ -44,12 +44,13 @@ static const Key keys[] =
 
     /* Applications */
     { MOD, XK_w,      spawn, CMD("firefox-bin") },
-    { MOD, XK_d,      spawn, V(dmenucmd)        },
+    { MOD, XK_d,      spawn, CMD("dmenu_run")   },
     { MOD, XK_a,      spawn, CMD("i3lock")      },
     { MOD, XK_Return, spawn, CMD("alacritty")   },
 
     /* Multimon */
-    { MOD,       XK_grave, swapmon,  NIL   },
+    { MOD,       XK_grave, swapmon,  I(+1) },
+    { MOD|SHIFT, XK_grave, swapmon,  I(-1) },
 	{ MOD,       XK_n,     focusmon, I(-1) },
 	{ MOD,       XK_m,     focusmon, I(+1) },
 	{ MOD|SHIFT, XK_n,     tagmon,   I(-1) },
