@@ -29,6 +29,7 @@ override CPPFLAGS += $(shell $(PKG_CONFIG) --cflags $(PC_DEPS))
 override CPPFLAGS += -I$(CFG_DIR)
 override CPPFLAGS += -D_DEFAULT_SOURCE -D_BSD_SOURCE -DXINERAMA
 override CPPFLAGS += -D_XOPEN_SOURCE=700L -DVERSION=\"$(VERSION)\"
+
 ifneq ($(strip $(DWM_THEME)),)
 override CPPFLAGS += -DDWM_THEME=$(DWM_THEME)
 endif
