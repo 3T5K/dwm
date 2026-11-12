@@ -5,6 +5,8 @@
 VERSION    ?= 6.8
 EXE        ?= dwm
 
+DWM_THEME  ?=
+
 PKG_CONFIG ?= pkg-config
 
 BLD_DIR	   ?= build
@@ -27,6 +29,9 @@ override CPPFLAGS += $(shell $(PKG_CONFIG) --cflags $(PC_DEPS))
 override CPPFLAGS += -I$(CFG_DIR)
 override CPPFLAGS += -D_DEFAULT_SOURCE -D_BSD_SOURCE -DXINERAMA
 override CPPFLAGS += -D_XOPEN_SOURCE=700L -DVERSION=\"$(VERSION)\"
+ifneq ($(strip $(DWM_THEME)),)
+override CPPFLAGS += -DDWM_THEME=$(DWM_THEME)
+endif
 
 LDFLAGS    ?=
 LDLIBS     := $(shell $(PKG_CONFIG) --libs $(PC_DEPS))
