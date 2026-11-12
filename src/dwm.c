@@ -447,6 +447,7 @@ static void xrayfocus(Client *c);
 static Client *xraymaybefallback(Monitor *mon, int grp);
 static void xrayunfocus(Client *c);
 static void zoom(const Arg *arg);
+static void swapmon(const Arg *arg);
 
 static pid_t getparentprocess(pid_t p);
 static int isdescprocess(pid_t p, pid_t c);
@@ -4018,6 +4019,80 @@ zoom(const Arg *arg)
 	if (c == nexttiled(selmon->clients) && !(c = nexttiled(c->next)))
 		return;
 	pop(c);
+}
+
+void
+swapmon(const Arg *arg)
+{
+    Monitor *arr[2], *m1, *m2, *i;
+    int x;
+
+    if (!arg || !mons->next)
+        return;
+
+    m1 = selmon;
+
+    for ( m2 = NULL, i = mons
+        ; i && i != m1
+        ; m2 = i, i = i->next );
+
+    if ((arg->i > 0 && m1->next) || !m2)
+        m2 = m1->next;
+
+    if (m1->sel)
+        unfocus(m1->sel, 1);
+
+    unsigned int tmp_ts[2] = { m1->tagset[0], m1->tagset[1] };
+    m1->tagset[0] = m2->tagset[0];
+    m1->tagset[1] = m2->tagset[1];
+    m2->tagset[0] = tmp_ts[0];
+    m2->tagset[1] = tmp_ts[1];
+
+    const Layout *tmp_lt[2] = { m1->lt[0], m1->lt[1] };
+    m1->lt[0] = m2->lt[0];
+    m1->lt[1] = m2->lt[1];
+    m2->lt[0] = tmp_lt[0];
+    m2->lt[1] = tmp_lt[1];
+
+    Client *c;
+    for (c = m1->clients; c; c = c->next)
+        c->mon = m2;
+    for (c = m2->clients; c; c = c->next)
+        c->mon = m1;
+
+#define SWAP_(type, member) \
+    type tmp_##member = m1->member; \
+    m1->member = m2->member; \
+    m2->member = tmp_##member;
+
+    SWAP_(Client *, clients);
+    SWAP_(Client *, stack);
+    SWAP_(Pertag *, pertag);
+    SWAP_(Client *, sel);
+    SWAP_(int, showbar);
+    SWAP_(int, topbar);
+    SWAP_(float, mfact);
+    SWAP_(int, nmaster);
+    SWAP_(unsigned int, sellt);
+    SWAP_(unsigned int, seltags);
+
+#undef SWAP_
+
+    arr[0] = m1; arr[1] = m2;
+    for (x = 0; x < 2; ++x) {
+        updatebarpos(arr[x]);
+        XMoveResizeWindow(
+            dpy,
+            arr[x]->barwin,
+            arr[x]->wx + sp,
+            arr[x]->by + vp,
+            arr[x]->ww - 2 * sp,
+            bh
+        );
+        arrange(arr[x]);
+    }
+
+    focus(m1->sel);
 }
 
 int
