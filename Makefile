@@ -16,8 +16,8 @@ MAN_DIR	   ?= share/man
 
 PC_DEPS    := freetype2 x11 xft xinerama fontconfig
 
-         CFLAGS   ?= -std=c99 -Werror -Os
-override CFLAGS   += -Wall -Wpedantic
+         CFLAGS   ?= -Werror -Os
+override CFLAGS   += -std=c99 -Wall -Wpedantic
 override CFLAGS   += -Wno-unused-function
 override CFLAGS   += -Wno-constant-logical-operand
 override CFLAGS   += -Wno-deprecated-declarations
