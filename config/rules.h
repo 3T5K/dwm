@@ -18,7 +18,6 @@ static const Rule rules[] =
         .title        = NULL,
         .tags         = 0,
         .isfloating   = 0,
-        .isfullscreen = 0,
         .isterminal   = 1,
         .noswallow    = 0,
         .monitor      = -1
