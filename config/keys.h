@@ -29,9 +29,6 @@
 	{ MOD|SHIFT,      KEY, tag,        UI(1 << TAG) }, \
 	{ MOD|CTRL|SHIFT, KEY, toggletag,  UI(1 << TAG) },
 
-static char        dmenumon[2] = "0";
-static const char *dmenucmd[]  = { NULL };
-
 static const Key keys[] =
 {
     /* General */
