@@ -26,7 +26,7 @@ index 81c3fc0..80daec3 100644
  	{ MODKEY|ShiftMask,             XK_c,      killclient,     {0} },
  	{ MODKEY,                       XK_t,      setlayout,      {.v = &layouts[0]} },
 diff --git a/dwm.c b/dwm.c
-index 9262ede..7b64f7a 100644
+index 9262ede..91fd95c 100644
 --- a/dwm.c
 +++ b/dwm.c
 @@ -65,6 +65,20 @@ enum { NetSupported, NetWMName, NetWMState, NetWMCheck,
@@ -95,10 +95,10 @@ index 9262ede..7b64f7a 100644
 +      || ( selmon->sel && selmon->sel->isfloating ) )
 +        return;
 +
++    ti = tileinfo();
 +    if (tilezoomcfg & (ti.st ? TileZoomStXDny : TileZoomMtXDny))
 +        return;
 +
-+    ti = tileinfo();
 +    if (ti.nc == 0 || selmon->nmaster == 0 || selmon->nmaster >= ti.nc)
 +        return;
 +

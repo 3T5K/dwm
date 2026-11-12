@@ -28,7 +28,7 @@ index 4b07e6b..3d72141 100644
  	{ MODKEY|ShiftMask,             XK_c,      killclient,     {0} },
  	{ MODKEY,                       XK_t,      setlayout,      {.v = &layouts[0]} },
 diff --git a/dwm.c b/dwm.c
-index a51302b..c090598 100644
+index a51302b..c509190 100644
 --- a/dwm.c
 +++ b/dwm.c
 @@ -67,6 +67,22 @@ enum { ClkTagBar, ClkLtSymbol, ClkStatusText, ClkWinTitle,
@@ -107,10 +107,10 @@ index a51302b..c090598 100644
 +      && ( tilezoomcfg & TileZoomStMExp ) )
 +        return;
 +
++    ti = tileinfo();
 +    if (tilezoomcfg & (ti.st ? TileZoomStXDny : TileZoomMtXDny))
 +        return;
 +
-+    ti = tileinfo();
 +    if (ti.nc == 0 || selmon->nmaster == 0 || selmon->nmaster >= ti.nc)
 +        return;
 +
