@@ -142,7 +142,7 @@ git diff 6.8..scratchpads-6.8 > dwm-scratchpads-6.8.diff
 
 ### noborderflicker-scratchpads-6.8
 
-**Dependencies:** 
+**Dependencies:**
 - scratchpads-6.8
 
 ```sh
