@@ -55,6 +55,7 @@
 #define HEIGHT(X)               ((X)->h + 2 * (X)->bw)
 #define TAGMASK                 ((1 << LENGTH(tags)) - 1)
 #define TEXTW(X)                (drw_fontset_getwidth(drw, (X)) + lrpad)
+#define LTCOLS_NOCOL            ((unsigned long)-1)
 
 /* enums */
 enum { CurNormal, CurResize, CurMove, CurLast }; /* cursor */
@@ -65,6 +66,7 @@ enum { NetSupported, NetWMName, NetWMState, NetWMCheck,
 enum { WMProtocols, WMDelete, WMState, WMTakeFocus, WMLast }; /* default atoms */
 enum { ClkTagBar, ClkLtSymbol, ClkStatusText, ClkWinTitle,
        ClkClientWin, ClkRootWin, ClkLast }; /* clicks */
+enum { LtColsEvLayout, LtColsEvManage, LtColsEvFocus, LtColsEvUnfocus };
 enum { XrayIn, XrayAc };
 enum { XrayGrpNone, XrayGrpMonocle };
 
@@ -99,6 +101,7 @@ struct Client {
 	Client *snext;
 	Monitor *mon;
 	Window win;
+    unsigned long ltcols_color;
 };
 
 typedef struct {
@@ -112,6 +115,20 @@ typedef struct {
 	const char *symbol;
 	void (*arrange)(Monitor *);
 } Layout;
+
+typedef struct {
+    void (*arrange)(Monitor *);
+    void (*paint)(Client *, int);
+} LtColsPair;
+
+typedef struct {
+    int (*match)(Client *);
+    void (*paint)(Client *, int);
+} LtColsOverride;
+
+typedef struct {
+    size_t row, col;
+} LtColsIdx;
 
 struct Monitor {
 	char ltsymbol[16];
@@ -180,6 +197,13 @@ static void grabkeys(void);
 static void incnmaster(const Arg *arg);
 static void keypress(XEvent *e);
 static void killclient(const Arg *arg);
+static int ltcols_override(Client *c, int ev);
+static void ltcols_map_paint(void (*paint)(Client *, int), Monitor *m, int ev);
+static Client *ltcols_nextvis(Client *c);
+static void ltcols_paint(Client *c, int ev);
+static void ltcols_paint_default(Client *c, int ev);
+static void ltcols_paint_template(Client *c, int ev, LtColsIdx ac, LtColsIdx in);
+static void ltcols_try_paint(Client *c, unsigned long col);
 static void manage(Window w, XWindowAttributes *wa);
 static void mappingnotify(XEvent *e);
 static void maprequest(XEvent *e);
@@ -278,6 +302,8 @@ static Display *dpy;
 static Drw *drw;
 static Monitor *mons, *selmon;
 static Window root, wmcheckwin;
+static LtColsOverride ltcols_overrides[] = { { 0 } };
+static LtColsPair ltcols_map[] = { { 0 } };
 static void (*xrayhandlers[])(Client *) = {
     [XrayGrpNone]    = NULL,
     [XrayGrpMonocle] = xraydefhandler,
@@ -416,9 +442,11 @@ arrangemon(Monitor *m)
 	strncpy(m->ltsymbol, m->lt[m->sellt]->symbol, sizeof m->ltsymbol);
     if (m->lt[m->sellt]->arrange)
         m->lt[m->sellt]->arrange(m);
-    else
+    else {
         for (c = nexttiled(m->clients); c; c = nexttiled(c->next))
             xraycfg(c, XrayGrpNone, -1);
+        ltcols_map_paint(NULL, m, LtColsEvLayout);
+    }
 }
 
 void
@@ -822,7 +850,7 @@ focus(Client *c)
 		detachstack(c);
 		attachstack(c);
 		grabbuttons(c, 1);
-		XSetWindowBorder(dpy, c->win, scheme[SchemeSel][ColBorder].pixel);
+        ltcols_paint(c, LtColsEvFocus);
 		setfocus(c);
 	} else {
 		XSetInputFocus(dpy, root, RevertToPointerRoot, CurrentTime);
@@ -1050,6 +1078,109 @@ killclient(const Arg *arg)
 	}
 }
 
+int
+ltcols_override(Client *c, int ev)
+{
+    int i;
+    LtColsOverride ov;
+
+    if (!c)
+        return 0;
+
+    for (i = 0; i < LENGTH(ltcols_overrides); ++i) {
+        ov = ltcols_overrides[i];
+        if (ov.match && ov.paint && ov.match(c)) {
+            ov.paint(c, ev);
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+void
+ltcols_map_paint(void (*paint)(Client *, int), Monitor *m, int ev)
+{
+    Client *c;
+
+    if (!m)
+        return;
+
+    if (!paint)
+        paint = ltcols_paint_default;
+
+    for (c = ltcols_nextvis(m->clients); c; c = ltcols_nextvis(c->next))
+        if (!ltcols_override(c, ev))
+            paint(c, ev);
+}
+
+Client *
+ltcols_nextvis(Client *c)
+{
+	for (; c && !ISVISIBLE(c); c = c->next);
+	return c;
+}
+
+void
+ltcols_paint(Client *c, int ev)
+{
+    int i, found;
+
+    if (!c || ltcols_override(c, ev))
+        return;
+
+    for (i = found = 0; i < LENGTH(ltcols_map) && !found; ++i)
+        if (c->mon->lt[c->mon->sellt]->arrange == ltcols_map[i].arrange
+                && (found = ltcols_map[i].paint != NULL))
+            ltcols_map[i].paint(c, ev);
+
+    if (!found)
+        ltcols_paint_default(c, ev);
+}
+
+void
+ltcols_paint_default(Client *c, int ev)
+{
+    LtColsIdx ac = { SchemeSel,  ColBorder };
+    LtColsIdx in = { SchemeNorm, ColBorder };
+    ltcols_paint_template(c, ev, ac, in);
+}
+
+void
+ltcols_paint_template(Client *c, int ev, LtColsIdx ac, LtColsIdx in)
+{
+    unsigned long col = LTCOLS_NOCOL;
+    LtColsIdx *idx;
+
+    if (!c)
+        return;
+
+    switch (ev) {
+        case LtColsEvLayout:
+            idx = c->mon == selmon && c->mon->sel == c ? &ac : &in;
+            col = scheme[idx->row][idx->col].pixel;
+            break;
+        case LtColsEvUnfocus:
+        case LtColsEvManage:
+            col = scheme[in.row][in.col].pixel;
+            break;
+        case LtColsEvFocus:
+            col = scheme[ac.row][ac.col].pixel;
+            break;
+    }
+
+    ltcols_try_paint(c, col);
+}
+
+void
+ltcols_try_paint(Client *c, unsigned long col)
+{
+    if (c && col != LTCOLS_NOCOL && c->ltcols_color != col) {
+        c->ltcols_color = col;
+        XSetWindowBorder(dpy, c->win, col);
+    }
+}
+
 void
 manage(Window w, XWindowAttributes *wa)
 {
@@ -1066,6 +1197,7 @@ manage(Window w, XWindowAttributes *wa)
 	c->w = c->oldw = wa->width;
 	c->h = c->oldh = wa->height;
 	c->oldbw = wa->border_width;
+    c->ltcols_color = LTCOLS_NOCOL;
 
 	updatetitle(c);
 	if (XGetTransientForHint(dpy, w, &trans) && (t = wintoclient(trans))) {
@@ -1086,7 +1218,7 @@ manage(Window w, XWindowAttributes *wa)
 
 	wc.border_width = c->bw;
 	XConfigureWindow(dpy, w, CWBorderWidth, &wc);
-	XSetWindowBorder(dpy, w, scheme[SchemeNorm][ColBorder].pixel);
+    ltcols_paint(c, LtColsEvManage);
 	configure(c); /* propagates border_width, if size doesn't change */
 	updatewindowtype(c);
 	updatesizehints(c);
@@ -1153,6 +1285,8 @@ monocle(Monitor *m)
 
     if (!ac)
         xrayfallback(m, XrayGrpMonocle);
+
+    ltcols_map_paint(NULL, m, LtColsEvLayout);
 }
 
 void
@@ -1723,7 +1857,7 @@ tile(Monitor *m)
 
 	for (n = 0, c = nexttiled(m->clients); c; xraycfg(c, XrayGrpNone, -1), c = nexttiled(c->next), n++);
 	if (n == 0)
-		return;
+		goto ltcols_update;
 
 	if (n > m->nmaster)
 		mw = m->nmaster ? m->ww * m->mfact : 0;
@@ -1741,6 +1875,9 @@ tile(Monitor *m)
 			if (ty + HEIGHT(c) < m->wh)
 				ty += HEIGHT(c);
 		}
+
+ltcols_update:
+    ltcols_map_paint(NULL, m, LtColsEvLayout);
 }
 
 void
@@ -1801,7 +1938,7 @@ unfocus(Client *c, int setfocus)
 	if (!c)
 		return;
 	grabbuttons(c, 0);
-	XSetWindowBorder(dpy, c->win, scheme[SchemeNorm][ColBorder].pixel);
+    ltcols_paint(c, LtColsEvUnfocus);
 	if (setfocus) {
 		XSetInputFocus(dpy, root, RevertToPointerRoot, CurrentTime);
 		XDeleteProperty(dpy, root, netatom[NetActiveWindow]);
