@@ -108,23 +108,6 @@ Example bindings in keys:
 { MODKEY, XK_v, sp_focus,  {0} },
 ```
 
-## appearence
-
-The border size of scratchpads is controlled by the following variable:
-```c
-static const unsigned int sp_borderpx = 1;
-```
-
-The border color can be specified in the `colors` array. The first field is the
-active color, second is the inactive color, and the third field is ignored.
-Despite that, it **must** be set a to valid color string.
-```c
-static const char *colors[][3] = {
-    [SchemeSpad] = { "#ff0000", "#00ff00", "#000000" },
-};
-```
-
-
 ## other configuration
 
 ```c
@@ -135,10 +118,33 @@ static const int sp_permit_fullscreen = 1;
 If monitor A has scratchpad X visible on it, toggling scratchpad Y on monitor B
 will cause X to be hidden on A if `sp_exclusive_across_mons` is non-zero.
 
+The border size of scratchpads is controlled by the following variable:
+```c
+static const unsigned int sp_borderpx = 1;
+```
+
+## noborderflicker
+
+This scratchpad patch changes when borders are repainted to avoid flickering on
+hides. If you want to use the noborderflicker patch alongside it, use the
+version provided bellow.
+
 ## patch files
+
+The following diffs do not include their dependencies. Those must be applied
+separately.
 
 ### scratchpads-6.8
 
 ```sh
 git diff 6.8..scratchpads-6.8 > dwm-scratchpads-6.8.diff
+```
+
+### noborderflicker-scratchpads-6.8
+
+**Dependencies:** 
+- scratchpads-6.8
+
+```sh
+git diff scratchpads-6.8..noborderflicker-scratchpads-6.8 > dwm-noborderflicker-scratchpads-6.8.diff
 ```
