@@ -58,7 +58,7 @@
 
 /* enums */
 enum { CurNormal, CurResize, CurMove, CurLast }; /* cursor */
-enum { SchemeNorm, SchemeSel }; /* color schemes */
+enum { SchemeNorm, SchemeExpM, SchemeExpS, SchemeSel }; /* color schemes */
 enum { NetSupported, NetWMName, NetWMState, NetWMCheck,
        NetWMFullscreen, NetActiveWindow, NetWMWindowType,
        NetWMWindowTypeDialog, NetClientList, NetLast }; /* EWMH atoms */
@@ -218,6 +218,7 @@ static void spawn(const Arg *arg);
 static void tag(const Arg *arg);
 static void tagmon(const Arg *arg);
 static void tile(Monitor *m);
+static void tilesyncborders(Monitor *m);
 static void togglebar(const Arg *arg);
 static void togglefloating(const Arg *arg);
 static void toggletag(const Arg *arg);
@@ -417,10 +418,21 @@ arrange(Monitor *m)
 }
 
 void
+tilebcolunpaint(Monitor *m)
+{
+    Client *c;
+
+    for (c = nexttiled(m->clients); c; c = nexttiled(c->next))
+        if (c->xraygrp == XrayGrpTileMaster || c->xraygrp == XrayGrpTileStack)
+            XSetWindowBorder(dpy, c->win, scheme[c == m->sel ? SchemeSel : SchemeNorm][ColBorder].pixel);
+}
+
+void
 arrangemon(Monitor *m)
 {
     Client *c;
 
+    tilebcolunpaint(m);
 	strncpy(m->ltsymbol, m->lt[m->sellt]->symbol, sizeof m->ltsymbol);
     if (m->lt[m->sellt]->arrange)
         m->lt[m->sellt]->arrange(m);
@@ -836,9 +848,28 @@ exstack(const Arg *arg)
     arrange(selmon);
 }
 
+enum {
+    ExStatNil    = 0,
+    ExStatMaster = 1,
+    ExStatStack  = 2,
+};
+
+int
+exstat(Client *c)
+{
+    if (!c || !ISVISIBLE(c) || c->isfloating || c->xraystat == XrayIn)
+        return ExStatNil;
+    if (c->xraygrp == XrayGrpTileMaster)
+        return ExStatMaster;
+    if (c->xraygrp == XrayGrpTileStack)
+        return ExStatStack;
+    return ExStatNil;
+}
+
 void
 focus(Client *c)
 {
+    int st;
 	if (!c || !ISVISIBLE(c))
 		for (c = selmon->stack; c && !ISVISIBLE(c); c = c->snext);
     xrayfocus(c);
@@ -852,7 +883,11 @@ focus(Client *c)
 		detachstack(c);
 		attachstack(c);
 		grabbuttons(c, 1);
-		XSetWindowBorder(dpy, c->win, scheme[SchemeSel][ColBorder].pixel);
+        if ((st = exstat(c)) != ExStatNil)
+            XSetWindowBorder(dpy, c->win, scheme
+                [st == ExStatMaster ? SchemeExpM : SchemeExpS][ColFg].pixel);
+        else
+            XSetWindowBorder(dpy, c->win, scheme[SchemeSel][ColBorder].pixel);
 		setfocus(c);
 	} else {
 		XSetInputFocus(dpy, root, RevertToPointerRoot, CurrentTime);
@@ -1767,6 +1802,8 @@ tile(Monitor *m)
     else
         mw = m->ww;
     for (i = ma = sa = my = ty = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), i++) {
+        if (c->xraygrp != XrayGrpNone && ((i < m->nmaster && !m->stacks.master) || (i >= m->nmaster && !m->stacks.stack)))
+            XSetWindowBorder(dpy, c->win, scheme[c == m->sel ? SchemeSel : SchemeNorm][ColBorder].pixel);
         if (i < m->nmaster) {
             xraycfg( c
                    , m->stacks.master ? XrayGrpTileMaster : XrayGrpNone
@@ -1795,6 +1832,29 @@ tile(Monitor *m)
 
     if (!sa && m->stacks.stack)
         xrayfallback(m, XrayGrpTileStack);
+
+    tilesyncborders(m);
+}
+
+void
+tilesyncborders(Monitor *m)
+{
+    Client *c;
+    int fs, fm, i;
+
+    for (fs = fm = 0, c = nexttiled(m->clients); c && !(fs && fm); c = nexttiled(c->next)) {
+        i = c == m->sel ? ColFg : ColBg;
+        if (c->xraystat == XrayAc) switch (c->xraygrp) {
+            case XrayGrpTileMaster:
+                XSetWindowBorder(dpy, c->win, scheme[SchemeExpM][i].pixel);
+                fm = 1;
+                break;
+            case XrayGrpTileStack:
+                XSetWindowBorder(dpy, c->win, scheme[SchemeExpS][i].pixel);
+                fs = 1;
+                break;
+        }
+    }
 }
 
 void
@@ -1852,10 +1912,15 @@ toggleview(const Arg *arg)
 void
 unfocus(Client *c, int setfocus)
 {
+    int st;
 	if (!c)
 		return;
 	grabbuttons(c, 0);
-	XSetWindowBorder(dpy, c->win, scheme[SchemeNorm][ColBorder].pixel);
+	if ((st = exstat(c)) != ExStatNil)
+		XSetWindowBorder(dpy, c->win, scheme
+			[st == ExStatMaster ? SchemeExpM : SchemeExpS][ColBg].pixel);
+	else
+		XSetWindowBorder(dpy, c->win, scheme[SchemeNorm][ColBorder].pixel);
 	if (setfocus) {
 		XSetInputFocus(dpy, root, RevertToPointerRoot, CurrentTime);
 		XDeleteProperty(dpy, root, netatom[NetActiveWindow]);

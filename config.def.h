@@ -16,6 +16,8 @@ static const char *colors[][3]      = {
 	/*               fg         bg         border   */
 	[SchemeNorm] = { col_gray3, col_gray1, col_gray2 },
 	[SchemeSel]  = { col_gray4, col_cyan,  col_cyan  },
+    [SchemeExpM] = { "#ff0000", "#000000", "#000000" },
+    [SchemeExpS] = { "#0000ff", "#000000", "#000000" },
 };
 
 /* tagging */
