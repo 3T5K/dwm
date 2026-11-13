@@ -70,7 +70,7 @@
 
 /* enums */
 enum { CurNormal, CurResize, CurMove, CurLast }; /* cursor */
-enum { SchemeNorm, SchemeSel }; /* color schemes */
+enum { SchemeNorm, SchemeSel, SchemeSpad }; /* color schemes */
 enum { NetSupported, NetWMName, NetWMState, NetWMCheck,
        NetWMFullscreen, NetActiveWindow, NetWMWindowType,
        NetWMWindowTypeDialog, NetClientList, NetWMPid, NetLast }; /* EWMH atoms */
@@ -887,10 +887,18 @@ focus(Client *c)
 		attachstack(c);
 		grabbuttons(c, 1);
 		/* set new focused border first to avoid flickering */
-		XSetWindowBorder(dpy, c->win, scheme[SchemeSel][ColBorder].pixel);
+		if (SP_ISSPAD(c))
+			XSetWindowBorder(dpy, c->win, scheme[SchemeSpad][ColFg].pixel);
+		else
+			XSetWindowBorder(dpy, c->win, scheme[SchemeSel][ColBorder].pixel);
 		/* lastfocused may be us if another window was unmanaged */
-		if (lastfocused && lastfocused != c && (!SP_ISSPAD(c) || sp_repaint))
-			XSetWindowBorder(dpy, lastfocused->win, scheme[SchemeNorm][ColBorder].pixel);
+		if (lastfocused && lastfocused != c) {
+			if (SP_ISSPAD(lastfocused)) {
+				if (sp_repaint)
+					XSetWindowBorder(dpy, lastfocused->win, scheme[SchemeSpad][ColBg].pixel);
+			} else
+				XSetWindowBorder(dpy, lastfocused->win, scheme[SchemeNorm][ColBorder].pixel);
+		}
 		setfocus(c);
 	} else {
 		XSetInputFocus(dpy, root, RevertToPointerRoot, CurrentTime);
@@ -1168,7 +1176,10 @@ manage(Window w, XWindowAttributes *wa)
 
 	wc.border_width = c->bw;
 	XConfigureWindow(dpy, w, CWBorderWidth, &wc);
-	XSetWindowBorder(dpy, w, scheme[SchemeNorm][ColBorder].pixel);
+	if (sps)
+		XSetWindowBorder(dpy, w, scheme[SchemeSpad][ColBg].pixel);
+	else
+		XSetWindowBorder(dpy, w, scheme[SchemeNorm][ColBorder].pixel);
 	configure(c); /* propagates border_width, if size doesn't change */
 	updatewindowtype(c);
 	updatesizehints(c);
