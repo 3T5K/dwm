@@ -22,12 +22,20 @@
 #define NIL   {0}
 
 #define CMD(...) { .v = (const char *[]){ __VA_ARGS__, NULL } }
+#define SCMD(name, ...) static const char *const name[] = { __VA_ARGS__, NULL }
 
 #define TAGKEYS(KEY,TAG)                               \
     { MOD,            KEY, view,       UI(1 << TAG) }, \
     { MOD|CTRL,       KEY, toggleview, UI(1 << TAG) }, \
     { MOD|SHIFT,      KEY, tag,        UI(1 << TAG) }, \
     { MOD|CTRL|SHIFT, KEY, toggletag,  UI(1 << TAG) },
+
+SCMD(VOL_SINK_UP,     "wpctl", "set-volume", "--limit", "1.0", "@DEFAULT_SINK@",   "5%+");
+SCMD(VOL_SOURCE_UP,   "wpctl", "set-volume", "--limit", "1.0", "@DEFAULT_SOURCE@", "5%+");
+SCMD(VOL_SINK_DOWN,   "wpctl", "set-volume", "--limit", "1.0", "@DEFAULT_SINK@",   "5%-");
+SCMD(VOL_SOURCE_DOWN, "wpctl", "set-volume", "--limit", "1.0", "@DEFAULT_SOURCE@", "5%-");
+SCMD(VOL_SINK_MUTE,   "wpctl", "set-mute", "@DEFAULT_SINK@",   "toggle");
+SCMD(VOL_SOURCE_MUTE, "wpctl", "set-mute", "@DEFAULT_SOURCE@", "toggle");
 
 static const Key keys[] =
 {
@@ -38,20 +46,6 @@ static const Key keys[] =
     { MOD|SHIFT, XK_c, togglefullscr,  NIL  },
     { MOD|SHIFT, XK_q, quit,           I(0) },
     { MOD|SHIFT, XK_r, quit,           I(1) },
-
-    /* Applications */
-    { MOD, XK_w,      spawn, CMD("firefox-bin") },
-    { MOD, XK_d,      spawn, CMD("dmenu_run")   },
-    { MOD, XK_a,      spawn, CMD("i3lock")      },
-    { MOD, XK_Return, spawn, CMD("alacritty")   },
-
-    /* Multimon */
-    { MOD,       XK_grave, swapmon,  I(+1) },
-    { MOD|SHIFT, XK_grave, swapmon,  I(-1) },
-    { MOD,       XK_n,     focusmon, I(-1) },
-    { MOD,       XK_m,     focusmon, I(+1) },
-    { MOD|SHIFT, XK_n,     tagmon,   I(-1) },
-    { MOD|SHIFT, XK_m,     tagmon,   I(+1) },
 
     /* Layouts */
     { MOD,       XK_t,   setlayout,    V(&layouts[LtTile   ]) },
@@ -83,17 +77,13 @@ static const Key keys[] =
     { MOD|CTRL,  XK_h,     setmfact,  F(-0.05)        },
     { MOD|CTRL,  XK_l,     setmfact,  F(+0.05)        },
 
-    /* Brigthness */
-    { 0, XF86XK_MonBrightnessUp,   spawn, CMD("/usr/bin/xbacklight", "-inc", "10") },
-    { 0, XF86XK_MonBrightnessDown, spawn, CMD("/usr/bin/xbacklight", "-dec", "10") },
-
-    /* Volume */
-    { 0,     XF86XK_AudioRaiseVolume, spawn, CMD("wpctl", "set-volume", "--limit", "1.0", "@DEFAULT_SINK@",   "5%+") },
-    { SHIFT, XF86XK_AudioRaiseVolume, spawn, CMD("wpctl", "set-volume", "--limit", "1.0", "@DEFAULT_SOURCE@", "5%+") },
-    { 0,     XF86XK_AudioLowerVolume, spawn, CMD("wpctl", "set-volume", "--limit", "1.0", "@DEFAULT_SINK@",   "5%-") },
-    { SHIFT, XF86XK_AudioLowerVolume, spawn, CMD("wpctl", "set-volume", "--limit", "1.0", "@DEFAULT_SOURCE@", "5%-") },
-    { 0,     XF86XK_AudioMute,        spawn, CMD("wpctl", "set-mute", "@DEFAULT_SINK@",   "toggle")                  },
-    { SHIFT, XF86XK_AudioMute,        spawn, CMD("wpctl", "set-mute", "@DEFAULT_SOURCE@", "toggle")                  },
+    /* Multimon */
+    { MOD,       XK_grave, swapmon,  I(+1) },
+    { MOD|SHIFT, XK_grave, swapmon,  I(-1) },
+    { MOD,       XK_n,     focusmon, I(-1) },
+    { MOD,       XK_m,     focusmon, I(+1) },
+    { MOD|SHIFT, XK_n,     tagmon,   I(-1) },
+    { MOD|SHIFT, XK_m,     tagmon,   I(+1) },
 
     /* Tags */
     TAGKEYS(XK_1, 0)
@@ -120,6 +110,24 @@ static const Key keys[] =
     { META, XK_7, sp_toggle, V("snd")   },
     { META, XK_8, sp_toggle, V("sys")   },
     { META, XK_9, sp_toggle, V("tor")   },
+
+    /* Applications */
+    { MOD, XK_w,      spawn, CMD("firefox-bin") },
+    { MOD, XK_d,      spawn, CMD("dmenu_run")   },
+    { MOD, XK_a,      spawn, CMD("i3lock")      },
+    { MOD, XK_Return, spawn, CMD("alacritty")   },
+
+    /* Brigthness */
+    { 0, XF86XK_MonBrightnessUp,   spawn, CMD("/usr/bin/xbacklight", "-inc", "10") },
+    { 0, XF86XK_MonBrightnessDown, spawn, CMD("/usr/bin/xbacklight", "-dec", "10") },
+
+    /* Volume */
+    { 0,     XF86XK_AudioRaiseVolume, spawn, V(VOL_SINK_UP)     },
+    { SHIFT, XF86XK_AudioRaiseVolume, spawn, V(VOL_SOURCE_UP)   },
+    { 0,     XF86XK_AudioLowerVolume, spawn, V(VOL_SINK_DOWN)   },
+    { SHIFT, XF86XK_AudioLowerVolume, spawn, V(VOL_SOURCE_DOWN) },
+    { 0,     XF86XK_AudioMute,        spawn, V(VOL_SINK_MUTE)   },
+    { SHIFT, XF86XK_AudioMute,        spawn, V(VOL_SOURCE_MUTE) },
 };
 
 static const Button buttons[] =
