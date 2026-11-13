@@ -83,6 +83,18 @@ static const Key keys[] =
 	{ MOD|CTRL,  XK_h,     setmfact,  F(-0.05)        },
 	{ MOD|CTRL,  XK_l,     setmfact,  F(+0.05)        },
 
+    /* Brigthness */
+    { 0, XF86XK_MonBrightnessUp,   spawn, CMD("/usr/bin/xbacklight", "-inc", "10") },
+    { 0, XF86XK_MonBrightnessDown, spawn, CMD("/usr/bin/xbacklight", "-dec", "10") },
+
+    /* Volume */
+    { 0,     XF86XK_AudioRaiseVolume, spawn, CMD("wpctl", "set-volume", "--limit", "1.0", "@DEFAULT_SINK@",   "5%+") },
+    { SHIFT, XF86XK_AudioRaiseVolume, spawn, CMD("wpctl", "set-volume", "--limit", "1.0", "@DEFAULT_SOURCE@", "5%+") },
+    { 0,     XF86XK_AudioLowerVolume, spawn, CMD("wpctl", "set-volume", "--limit", "1.0", "@DEFAULT_SINK@",   "5%-") },
+    { SHIFT, XF86XK_AudioLowerVolume, spawn, CMD("wpctl", "set-volume", "--limit", "1.0", "@DEFAULT_SOURCE@", "5%-") },
+    { 0,     XF86XK_AudioMute,        spawn, CMD("wpctl", "set-mute", "@DEFAULT_SINK@",   "toggle")                  },
+    { SHIFT, XF86XK_AudioMute,        spawn, CMD("wpctl", "set-mute", "@DEFAULT_SOURCE@", "toggle")                  },
+
     /* Tags */
 	TAGKEYS(XK_1, 0)
 	TAGKEYS(XK_2, 1)
