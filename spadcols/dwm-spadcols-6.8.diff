@@ -1,0 +1,61 @@
+diff --git a/config.def.h b/config.def.h
+index 0b83f1e..ff12955 100644
+--- a/config.def.h
++++ b/config.def.h
+@@ -16,6 +16,7 @@ static const char *colors[][3]      = {
+ 	/*               fg         bg         border   */
+ 	[SchemeNorm] = { col_gray3, col_gray1, col_gray2 },
+ 	[SchemeSel]  = { col_gray4, col_cyan,  col_cyan  },
++    [SchemeSpad] = { col_cyan,  col_gray2, "#000000" }
+ };
+ 
+ static const int sp_exclusive_across_mons = 1;
+diff --git a/dwm.c b/dwm.c
+index e142795..0294164 100644
+--- a/dwm.c
++++ b/dwm.c
+@@ -70,7 +70,7 @@
+ 
+ /* enums */
+ enum { CurNormal, CurResize, CurMove, CurLast }; /* cursor */
+-enum { SchemeNorm, SchemeSel }; /* color schemes */
++enum { SchemeNorm, SchemeSel, SchemeSpad }; /* color schemes */
+ enum { NetSupported, NetWMName, NetWMState, NetWMCheck,
+        NetWMFullscreen, NetActiveWindow, NetWMWindowType,
+        NetWMWindowTypeDialog, NetClientList, NetWMPid, NetLast }; /* EWMH atoms */
+@@ -885,7 +885,10 @@ focus(Client *c)
+ 		detachstack(c);
+ 		attachstack(c);
+ 		grabbuttons(c, 1);
+-		XSetWindowBorder(dpy, c->win, scheme[SchemeSel][ColBorder].pixel);
++		if (SP_ISSPAD(c))
++			XSetWindowBorder(dpy, c->win, scheme[SchemeSpad][ColFg].pixel);
++		else
++			XSetWindowBorder(dpy, c->win, scheme[SchemeSel][ColBorder].pixel);
+ 		setfocus(c);
+ 	} else {
+ 		XSetInputFocus(dpy, root, RevertToPointerRoot, CurrentTime);
+@@ -1163,7 +1166,10 @@ manage(Window w, XWindowAttributes *wa)
+ 
+ 	wc.border_width = c->bw;
+ 	XConfigureWindow(dpy, w, CWBorderWidth, &wc);
+-	XSetWindowBorder(dpy, w, scheme[SchemeNorm][ColBorder].pixel);
++	if (sps)
++		XSetWindowBorder(dpy, w, scheme[SchemeSpad][ColBg].pixel);
++	else
++		XSetWindowBorder(dpy, w, scheme[SchemeNorm][ColBorder].pixel);
+ 	configure(c); /* propagates border_width, if size doesn't change */
+ 	updatewindowtype(c);
+ 	updatesizehints(c);
+@@ -2203,7 +2209,10 @@ unfocus(Client *c, int setfocus)
+ 	if (!c)
+ 		return;
+ 	grabbuttons(c, 0);
+-	if (!SP_ISSPAD(c) || sp_repaint)
++	if (SP_ISSPAD(c)) {
++		if (sp_repaint)
++			XSetWindowBorder(dpy, c->win, scheme[SchemeSpad][ColBg].pixel);
++	} else
+ 		XSetWindowBorder(dpy, c->win, scheme[SchemeNorm][ColBorder].pixel);
+ 	if (setfocus) {
+ 		XSetInputFocus(dpy, root, RevertToPointerRoot, CurrentTime);
