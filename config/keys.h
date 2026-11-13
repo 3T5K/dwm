@@ -76,12 +76,12 @@ static const Key keys[] =
     { MOD|SHIFT, XK_l, tilemove, I('E') },
 
     /* Tile Layout */
-    { MOD,       XK_x, exstack,   NIL             },
-	{ MOD|SHIFT, XK_v, tilezoom,  NIL             },
-	{ MOD,       XK_i, tilenmctl, I(TileNmCtlInc) },
-	{ MOD,       XK_u, tilenmctl, I(TileNmCtlDec) },
-	{ MOD|CTRL,  XK_h, setmfact,  F(-0.05)        },
-	{ MOD|CTRL,  XK_l, setmfact,  F(+0.05)        },
+    { MOD,       XK_x,     exstack,   NIL             },
+	{ MOD,       XK_space, tilezoom,  NIL             },
+	{ MOD,       XK_i,     tilenmctl, I(TileNmCtlInc) },
+	{ MOD,       XK_u,     tilenmctl, I(TileNmCtlDec) },
+	{ MOD|CTRL,  XK_h,     setmfact,  F(-0.05)        },
+	{ MOD|CTRL,  XK_l,     setmfact,  F(+0.05)        },
 
     /* Tags */
 	TAGKEYS(XK_1, 0)
