@@ -59,7 +59,8 @@
 
 /* enums */
 enum { CurNormal, CurResize, CurMove, CurLast }; /* cursor */
-enum { SchemeNorm, SchemeSel }; /* color schemes */
+enum { SchemeNorm, SchemeSel, SchemeTileMasterExp, SchemeTileMasterCol,
+       SchemeTileStackExp, SchemeTileStackCol }; /* color schemes */
 enum { NetSupported, NetWMName, NetWMState, NetWMCheck,
        NetWMFullscreen, NetActiveWindow, NetWMWindowType,
        NetWMWindowTypeDialog, NetClientList, NetLast }; /* EWMH atoms */
@@ -208,6 +209,7 @@ static int ltcols_override(Client *c, int ev);
 static void ltcols_paint(Client *c, int ev);
 static void ltcols_paint_default(Client *c, int ev);
 static void ltcols_paint_template(Client *c, int ev, LtColsIdx ac, LtColsIdx in);
+static void ltcols_paint_tile(Client *c, int ev);
 static void ltcols_try_paint(Client *c, unsigned long col);
 static void manage(Window w, XWindowAttributes *wa);
 static void mappingnotify(XEvent *e);
@@ -308,7 +310,9 @@ static Drw *drw;
 static Monitor *mons, *selmon;
 static Window root, wmcheckwin;
 static LtColsOverride ltcols_overrides[] = { { 0 } };
-static LtColsPair ltcols_map[] = { { 0 } };
+static LtColsPair ltcols_map[] = {
+    { .arrange = tile, .paint = ltcols_paint_tile },
+};
 static void (*xrayhandlers[])(Client *) = {
     [XrayGrpNone] = NULL,
     [XrayGrpTileMaster] = xraydefhandler,
@@ -1180,6 +1184,45 @@ ltcols_paint_template(Client *c, int ev, LtColsIdx ac, LtColsIdx in)
 }
 
 void
+ltcols_paint_tile(Client *c, int ev)
+{
+    LtColsIdx idx;
+    Client *x;
+    int m, s, nc;
+
+    if (ev == LtColsEvLayout)
+        return;
+
+    if (c->isfloating)
+        ltcols_paint_default(c, ev); 
+
+    switch (ev) {
+        case LtColsEvFocus:
+            idx.col = ColFg;
+            break;
+        case LtColsEvManage:
+        case LtColsEvUnfocus:
+            idx.col = ColBg;
+            break;
+    } 
+
+    m = c->xraygrp == XrayGrpTileMaster;
+    s = c->xraygrp == XrayGrpTileStack;
+    if (!(m || s)) {
+        for ( nc = 0, x = nexttiled(c->mon->clients)
+            ; x && x != c
+            ; ++nc, x = nexttiled(x->next) );
+        idx.row = nc < c->mon->nmaster
+            ? SchemeTileMasterCol
+            : SchemeTileStackCol;
+    } else {
+        idx.row = m ? SchemeTileMasterExp : SchemeTileStackExp; 
+    }
+
+    ltcols_try_paint(c, scheme[idx.row][idx.col].pixel); 
+}
+
+void
 ltcols_try_paint(Client *c, unsigned long col)
 {
     if (c && col != LTCOLS_NOCOL && c->ltcols_color != col) {
@@ -1854,8 +1897,9 @@ tagmon(const Arg *arg)
 void
 tile(Monitor *m)
 {
-    unsigned int i, n, h, mw, my, ty, si, ma, sa;
+    unsigned int i, n, h, mw, my, ty, si, ma, sa, rp;
     Client *c, *xr[2];
+    LtColsIdx idx;
 
     for (n = si = 0, xr[0] = xr[1] = NULL, c = nexttiled(m->clients); c; c = nexttiled(c->next), ++n) {
         if (m->sel == c)
@@ -1878,11 +1922,14 @@ tile(Monitor *m)
     else
         mw = m->ww;
     for (i = ma = sa = my = ty = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), i++) {
+        rp = !ltcols_override(c, LtColsEvLayout);
         if (i < m->nmaster) {
             xraycfg( c
                    , m->stacks.master ? XrayGrpTileMaster : XrayGrpNone
                    , xr[0] == c ? (ma = 1, XrayAc) : XrayIn
                    );
+            idx.row = m->stacks.master ? SchemeTileMasterExp : SchemeTileMasterCol;
+            idx.col = ma ? ColFg : ColBg;
             h = m->stacks.master ? m->wh : (m->wh - my) / (MIN(n, m->nmaster) - i);
             resize(c, m->wx, m->wy + my * !m->stacks.master, mw - (2*c->bw), h - (2*c->bw), 0);
             if (my + HEIGHT(c) < m->wh)
@@ -1892,12 +1939,16 @@ tile(Monitor *m)
                    , m->stacks.stack ? XrayGrpTileStack : XrayGrpNone
                    , xr[1] == c ? (sa = 1, XrayAc) : XrayIn
                    );
+            idx.row = m->stacks.stack ? SchemeTileStackExp : SchemeTileStackCol;
+            idx.col = sa ? ColFg : ColBg;
             h = m->stacks.stack ? m->wh : (m->wh - ty) / (n - i);
             resize(c, m->wx + mw, m->wy + ty * !m->stacks.stack, m->ww - mw - (2*c->bw), h - (2*c->bw), 0);
             if (ty + HEIGHT(c) < m->wh)
                 ty += HEIGHT(c);
         }
 
+        if (rp)
+            ltcols_try_paint(c, scheme[idx.row][idx.col].pixel); 
         xrayapply(c);
     }
 
