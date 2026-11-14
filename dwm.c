@@ -59,7 +59,7 @@
 
 /* enums */
 enum { CurNormal, CurResize, CurMove, CurLast }; /* cursor */
-enum { SchemeNorm, SchemeSel }; /* color schemes */
+enum { SchemeNorm, SchemeSel, SchemeFloatLt }; /* color schemes */
 enum { NetSupported, NetWMName, NetWMState, NetWMCheck,
        NetWMFullscreen, NetActiveWindow, NetWMWindowType,
        NetWMWindowTypeDialog, NetClientList, NetLast }; /* EWMH atoms */
@@ -197,6 +197,7 @@ static void killclient(const Arg *arg);
 static int ltcols_override(Client *c, int ev);
 static void ltcols_paint(Client *c, int ev);
 static void ltcols_paint_default(Client *c, int ev);
+static void ltcols_paint_floatlt(Client *c, int ev);
 static void ltcols_paint_template(Client *c, int ev, LtColsIdx ac, LtColsIdx in);
 static void ltcols_try_paint(Client *c, unsigned long col);
 static void manage(Window w, XWindowAttributes *wa);
@@ -427,7 +428,7 @@ arrangemon(Monitor *m)
 	else
 		for (c = nexttiled(m->clients); c; c = nexttiled(c->next))
 			if (!ltcols_override(c, LtColsEvLayout))
-				ltcols_paint_default(c, LtColsEvLayout);
+				ltcols_paint_floatlt(c, LtColsEvLayout);
 }
 
 void
@@ -1100,6 +1101,14 @@ ltcols_paint_default(Client *c, int ev)
 {
     LtColsIdx ac = { SchemeSel,  ColBorder };
     LtColsIdx in = { SchemeNorm, ColBorder };
+    ltcols_paint_template(c, ev, ac, in);
+}
+
+void
+ltcols_paint_floatlt(Client *c, int ev)
+{
+    LtColsIdx ac = { SchemeFloatLt, ColFg };
+    LtColsIdx in = { SchemeFloatLt, ColBg };
     ltcols_paint_template(c, ev, ac, in);
 }
 
