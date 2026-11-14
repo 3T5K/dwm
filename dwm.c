@@ -71,7 +71,7 @@
 
 /* enums */
 enum { CurNormal, CurResize, CurMove, CurLast }; /* cursor */
-enum { SchemeNorm, SchemeSel }; /* color schemes */
+enum { SchemeNorm, SchemeSel, SchemeSpad }; /* color schemes */
 enum { NetSupported, NetWMName, NetWMState, NetWMCheck,
        NetWMFullscreen, NetActiveWindow, NetWMWindowType,
        NetWMWindowTypeDialog, NetClientList, NetWMPid, NetLast }; /* EWMH atoms */
@@ -262,9 +262,11 @@ static void grabkeys(void);
 static void incnmaster(const Arg *arg);
 static void keypress(XEvent *e);
 static void killclient(const Arg *arg);
+static int ltcols_match_spad(Client *c);
 static int ltcols_override(Client *c, int ev);
 static void ltcols_paint(Client *c, int ev);
 static void ltcols_paint_default(Client *c, int ev);
+static void ltcols_paint_spad(Client *c, int ev);
 static void ltcols_paint_template(Client *c, int ev, LtColsIdx ac, LtColsIdx in);
 static void ltcols_try_paint(Client *c, unsigned long col);
 static void manage(Window w, XWindowAttributes *wa);
@@ -367,7 +369,9 @@ static Display *dpy;
 static Drw *drw;
 static Monitor *mons, *selmon;
 static Window root, wmcheckwin;
-static LtColsOverride ltcols_overrides[] = { { 0 } };
+static LtColsOverride ltcols_overrides[] = {
+    { .match = ltcols_match_spad, .paint = ltcols_paint_spad },
+};
 static LtColsPair ltcols_map[] = { { 0 } };
 
 /* configuration, allows nested code to access above variables */
@@ -1144,6 +1148,12 @@ killclient(const Arg *arg)
 }
 
 int
+ltcols_match_spad(Client *c)
+{
+    return c && SP_ISSPAD(c);
+}
+
+int
 ltcols_override(Client *c, int ev)
 {
     int i;
@@ -1185,6 +1195,17 @@ ltcols_paint_default(Client *c, int ev)
 {
     LtColsIdx ac = { SchemeSel,  ColBorder };
     LtColsIdx in = { SchemeNorm, ColBorder };
+    ltcols_paint_template(c, ev, ac, in);
+}
+
+void
+ltcols_paint_spad(Client *c, int ev)
+{
+    if (ev == LtColsEvUnfocus && !sp_repaint)
+        return;
+
+    LtColsIdx ac = { SchemeSpad, ColFg };
+    LtColsIdx in = { SchemeSpad, ColBg };
     ltcols_paint_template(c, ev, ac, in);
 }
 
