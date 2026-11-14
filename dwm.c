@@ -59,7 +59,7 @@
 
 /* enums */
 enum { CurNormal, CurResize, CurMove, CurLast }; /* cursor */
-enum { SchemeNorm, SchemeSel }; /* color schemes */
+enum { SchemeNorm, SchemeSel, SchemeMonocle }; /* color schemes */
 enum { NetSupported, NetWMName, NetWMState, NetWMCheck,
        NetWMFullscreen, NetActiveWindow, NetWMWindowType,
        NetWMWindowTypeDialog, NetClientList, NetLast }; /* EWMH atoms */
@@ -202,6 +202,7 @@ static void ltcols_map_paint(void (*paint)(Client *, int), Monitor *m, int ev);
 static Client *ltcols_nextvis(Client *c);
 static void ltcols_paint(Client *c, int ev);
 static void ltcols_paint_default(Client *c, int ev);
+static void ltcols_paint_monocle(Client *c, int ev);
 static void ltcols_paint_template(Client *c, int ev, LtColsIdx ac, LtColsIdx in);
 static void ltcols_try_paint(Client *c, unsigned long col);
 static void manage(Window w, XWindowAttributes *wa);
@@ -303,7 +304,9 @@ static Drw *drw;
 static Monitor *mons, *selmon;
 static Window root, wmcheckwin;
 static LtColsOverride ltcols_overrides[] = { { 0 } };
-static LtColsPair ltcols_map[] = { { 0 } };
+static LtColsPair ltcols_map[] = {
+    { .arrange = monocle, .paint = ltcols_paint_monocle },
+};
 static void (*xrayhandlers[])(Client *) = {
     [XrayGrpNone]    = NULL,
     [XrayGrpMonocle] = xraydefhandler,
@@ -1147,6 +1150,14 @@ ltcols_paint_default(Client *c, int ev)
 }
 
 void
+ltcols_paint_monocle(Client *c, int ev)
+{
+    LtColsIdx ac = { SchemeMonocle, ColFg };
+    LtColsIdx in = { SchemeMonocle, ColBg };
+    ltcols_paint_template(c, ev, ac, in);
+}
+
+void
 ltcols_paint_template(Client *c, int ev, LtColsIdx ac, LtColsIdx in)
 {
     unsigned long col = LTCOLS_NOCOL;
@@ -1286,7 +1297,9 @@ monocle(Monitor *m)
     if (!ac)
         xrayfallback(m, XrayGrpMonocle);
 
-    ltcols_map_paint(NULL, m, LtColsEvLayout);
+    for (c = ltcols_nextvis(m->clients); c; c = ltcols_nextvis(c->next))
+        if ((c->xraystat == XrayAc || c->isfloating) && !ltcols_override(c, LtColsEvLayout))
+            ltcols_paint_monocle(c, LtColsEvLayout);
 }
 
 void
