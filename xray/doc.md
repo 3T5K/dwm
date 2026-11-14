@@ -78,14 +78,14 @@ static void xraydefhandler(Client *c);
 
 ## xrayfallback
 
-Finds the first client in the focus stack of the selected monitor
-(`selmon->stack`) that belongs to `grp`, makes it active, and returns a pointer
-to it. It does not check whether another client in that group is already active.
-Returns `NULL` if no viable client is found. No search is done if `grp` is
-`XrayGrpNone` and `NULL` is returned. 
+Finds the first client in the focus stack of monitor `mon` (`mon->stack`) that
+belongs to `grp`, makes it active, and returns a pointer to it. It does not
+check whether another client in that group is already active. Returns `NULL` if
+no viable client is found. No search is done if `grp` is `XrayGrpNone` and
+`NULL` is returned.
 
 ```c
-static Client *xrayfallback(int grp);
+static Client *xrayfallback(Monitor *mon, int grp);
 ```
 
 ## xrayfocus
@@ -100,13 +100,13 @@ static void xrayfocus(Client *c);
 
 ## xraymaybefallback
 
-Checks if there is an active client within `grp`. If there is not, it invokes
-`xrayfallback`. If an active client is located, a pointer to it is returned,
-otherwise it returns `NULL`. Does nothing if `grp` is `XrayGrpNone` and returns
-`NULL`.
+Checks if there is an active client within `grp` on monitor `mon`. If there is
+not, it invokes `xrayfallback`. If an active client is located, a pointer to it
+is returned, otherwise it returns `NULL`. Does nothing if `grp` is `XrayGrpNone`
+and returns `NULL`.
 
 ```c
-static Client *xraymaybefallback(int grp);
+static Client *xraymaybefallback(Monitor *mon, int grp);
 ```
 
 ## xrayunfocus
