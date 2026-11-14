@@ -59,7 +59,7 @@
 
 /* enums */
 enum { CurNormal, CurResize, CurMove, CurLast }; /* cursor */
-enum { SchemeNorm, SchemeSel }; /* color schemes */
+enum { SchemeNorm, SchemeSel, SchemeTile }; /* color schemes */
 enum { NetSupported, NetWMName, NetWMState, NetWMCheck,
        NetWMFullscreen, NetActiveWindow, NetWMWindowType,
        NetWMWindowTypeDialog, NetClientList, NetLast }; /* EWMH atoms */
@@ -198,6 +198,7 @@ static int ltcols_override(Client *c, int ev);
 static void ltcols_paint(Client *c, int ev);
 static void ltcols_paint_default(Client *c, int ev);
 static void ltcols_paint_template(Client *c, int ev, LtColsIdx ac, LtColsIdx in);
+static void ltcols_paint_tile(Client *c, int ev);
 static void ltcols_try_paint(Client *c, unsigned long col);
 static void manage(Window w, XWindowAttributes *wa);
 static void mappingnotify(XEvent *e);
@@ -1130,6 +1131,14 @@ ltcols_paint_template(Client *c, int ev, LtColsIdx ac, LtColsIdx in)
 }
 
 void
+ltcols_paint_tile(Client *c, int ev)
+{
+    LtColsIdx ac = { SchemeTile, ColFg };
+    LtColsIdx in = { SchemeTile, ColBg };
+    ltcols_paint_template(c, ev, ac, in);
+}
+
+void
 ltcols_try_paint(Client *c, unsigned long col)
 {
     if (c && col != LTCOLS_NOCOL && c->ltcols_color != col) {
@@ -1806,7 +1815,7 @@ tile(Monitor *m)
 
 	for (n = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), n++)
 		if (!ltcols_override(c, LtColsEvLayout))
-			ltcols_paint_default(c, LtColsEvLayout);
+			ltcols_paint_tile(c, LtColsEvLayout);
 	if (n == 0)
 		return;
 
