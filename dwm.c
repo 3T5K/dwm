@@ -59,7 +59,8 @@
 
 /* enums */
 enum { CurNormal, CurResize, CurMove, CurLast }; /* cursor */
-enum { SchemeNorm, SchemeSel }; /* color schemes */
+enum { SchemeNorm, SchemeSel, SchemeTileMasterExp, SchemeTileMasterCol,
+       SchemeTileStackExp, SchemeTileStackCol }; /* color schemes */
 enum { NetSupported, NetWMName, NetWMState, NetWMCheck,
        NetWMFullscreen, NetActiveWindow, NetWMWindowType,
        NetWMWindowTypeDialog, NetClientList, NetLast }; /* EWMH atoms */
@@ -210,6 +211,7 @@ static Client *ltcols_nextvis(Client *c);
 static void ltcols_paint(Client *c, int ev);
 static void ltcols_paint_default(Client *c, int ev);
 static void ltcols_paint_template(Client *c, int ev, LtColsIdx ac, LtColsIdx in);
+static void ltcols_paint_tile(Client *c, int ev);
 static void ltcols_try_paint(Client *c, unsigned long col);
 static void manage(Window w, XWindowAttributes *wa);
 static void mappingnotify(XEvent *e);
@@ -310,7 +312,9 @@ static Drw *drw;
 static Monitor *mons, *selmon;
 static Window root, wmcheckwin;
 static LtColsOverride ltcols_overrides[] = { { 0 } };
-static LtColsPair ltcols_map[] = { { 0 } };
+static LtColsPair ltcols_map[] = {
+    { .arrange = tile, .paint = ltcols_paint_tile },
+};
 static void (*xrayhandlers[])(Client *) = {
     [XrayGrpNone] = NULL,
     [XrayGrpTileMaster] = xraydefhandler,
@@ -1203,6 +1207,49 @@ ltcols_paint_template(Client *c, int ev, LtColsIdx ac, LtColsIdx in)
 }
 
 void
+ltcols_paint_tile(Client *c, int ev)
+{
+    LtColsIdx idx;
+    Client *x;
+    int m, s, nc;
+
+    if (ev == LtColsEvLayout)
+        return;
+
+    if (c->isfloating) {
+        ltcols_paint_default(c, ev);
+        return;
+    }
+
+    switch (ev) {
+        case LtColsEvFocus:
+            idx.col = ColFg;
+            break;
+        case LtColsEvManage:
+        case LtColsEvUnfocus:
+            idx.col = ColBg;
+            break;
+        default:
+            idx.col = LTCOLS_NOCOL; /* unreachable */
+    }
+
+    m = c->xraygrp == XrayGrpTileMaster;
+    s = c->xraygrp == XrayGrpTileStack;
+    if (!(m || s)) {
+        for ( nc = 0, x = nexttiled(c->mon->clients)
+            ; x && x != c
+            ; ++nc, x = nexttiled(x->next) );
+        idx.row = nc < c->mon->nmaster
+            ? SchemeTileMasterCol
+            : SchemeTileStackCol;
+    } else {
+        idx.row = m ? SchemeTileMasterExp : SchemeTileStackExp;
+    }
+
+    ltcols_try_paint(c, scheme[idx.row][idx.col].pixel);
+}
+
+void
 ltcols_try_paint(Client *c, unsigned long col)
 {
     if (c && col != LTCOLS_NOCOL && c->ltcols_color != col) {
@@ -1879,6 +1926,7 @@ tile(Monitor *m)
 {
     unsigned int i, n, h, mw, my, ty, si, ma, sa;
     Client *c, *xr[2];
+    LtColsIdx idx;
 
     for (n = si = 0, xr[0] = xr[1] = NULL, c = nexttiled(m->clients); c; c = nexttiled(c->next), ++n) {
         if (m->sel == c)
@@ -1931,7 +1979,27 @@ tile(Monitor *m)
         xrayfallback(m, XrayGrpTileStack);
 
 ltcols_update:
-    ltcols_map_paint(NULL, m, LtColsEvLayout);
+    for (i = 0, c = ltcols_nextvis(m->clients); c; c = ltcols_nextvis(c->next)) {
+        if (ltcols_override(c, LtColsEvLayout))
+            continue;
+
+        if (c->isfloating) {
+            ltcols_paint_default(c, LtColsEvLayout);
+            continue;
+        }
+
+        idx.col = selmon->sel == c ? ColFg : ColBg;
+        ma = c->xraygrp == XrayGrpTileMaster;
+        sa = c->xraygrp == XrayGrpTileStack;
+        if (ma || sa) {
+            if (c->xraystat == XrayIn)
+                continue;
+            idx.row = ma ? SchemeTileMasterExp : SchemeTileStackExp;
+        } else
+            idx.row = i < m->nmaster ? SchemeTileMasterCol : SchemeTileStackCol;
+        ltcols_try_paint(c, scheme[idx.row][idx.col].pixel);
+        ++i;
+    }
 }
 
 void
