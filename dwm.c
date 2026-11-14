@@ -59,7 +59,7 @@
 
 /* enums */
 enum { CurNormal, CurResize, CurMove, CurLast }; /* cursor */
-enum { SchemeNorm, SchemeSel }; /* color schemes */
+enum { SchemeNorm, SchemeSel, SchemeMonocle }; /* color schemes */
 enum { NetSupported, NetWMName, NetWMState, NetWMCheck,
        NetWMFullscreen, NetActiveWindow, NetWMWindowType,
        NetWMWindowTypeDialog, NetClientList, NetLast }; /* EWMH atoms */
@@ -199,6 +199,7 @@ static void ltcols_map_paint(void (*paint)(Client *, int), Monitor *m, int ev);
 static Client *ltcols_nextvis(Client *c);
 static void ltcols_paint(Client *c, int ev);
 static void ltcols_paint_default(Client *c, int ev);
+static void ltcols_paint_monocle(Client *c, int ev);
 static void ltcols_paint_template(Client *c, int ev, LtColsIdx ac, LtColsIdx in);
 static void ltcols_try_paint(Client *c, unsigned long col);
 static void manage(Window w, XWindowAttributes *wa);
@@ -291,7 +292,9 @@ static Drw *drw;
 static Monitor *mons, *selmon;
 static Window root, wmcheckwin;
 static LtColsOverride ltcols_overrides[] = { { 0 } };
-static LtColsPair ltcols_map[] = { { 0 } };
+static LtColsPair ltcols_map[] = {
+    { .arrange = monocle, .paint = ltcols_paint_monocle }
+};
 
 /* configuration, allows nested code to access above variables */
 #include "config.h"
@@ -1125,6 +1128,14 @@ ltcols_paint_default(Client *c, int ev)
 }
 
 void
+ltcols_paint_monocle(Client *c, int ev)
+{
+    LtColsIdx ac = { SchemeMonocle, ColFg };
+    LtColsIdx in = { SchemeMonocle, ColBg };
+    ltcols_paint_template(c, ev, ac, in);
+}
+
+void
 ltcols_paint_template(Client *c, int ev, LtColsIdx ac, LtColsIdx in)
 {
     unsigned long col = LTCOLS_NOCOL;
@@ -1256,7 +1267,7 @@ monocle(Monitor *m)
 	for (c = nexttiled(m->clients); c; c = nexttiled(c->next))
 		resize(c, m->wx, m->wy, m->ww - 2 * c->bw, m->wh - 2 * c->bw, 0);
 
-    ltcols_map_paint(NULL, m, LtColsEvLayout);
+    ltcols_map_paint(ltcols_paint_monocle, m, LtColsEvLayout);
 }
 
 void
