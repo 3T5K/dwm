@@ -85,7 +85,7 @@ enum { WMProtocols, WMDelete, WMState, WMTakeFocus, WMLast }; /* default atoms *
 enum { ClkTagBar, ClkLtSymbol, ClkStatusText, ClkWinTitle,
        ClkClientWin, ClkRootWin, ClkLast }; /* clicks */
 enum { XrayIn, XrayAc };
-enum { XrayGrpNone };
+enum { XrayGrpNone, XrayGrpMonocle };
 enum {
     SP_R_TILE_TAG,
     SP_R_GAPS_TAG,
@@ -390,7 +390,8 @@ static Drw *drw;
 static Monitor *mons, *selmon;
 static Window root, wmcheckwin;
 static void (*xrayhandlers[])(Client *) = {
-    [XrayGrpNone] = NULL,
+    [XrayGrpNone]    = NULL,
+    [XrayGrpMonocle] = xraydefhandler,
 };
 
 static xcb_connection_t *xcon;
@@ -1571,16 +1572,21 @@ monocle(Monitor *m)
 {
 	unsigned int n = 0;
 	Client *c;
+    int ac;
 
 	for (c = m->clients; c; c = c->next)
 		if (ISVISIBLE(c))
 			n++;
 	if (n > 0) /* override layout symbol */
 		snprintf(m->ltsymbol, sizeof m->ltsymbol, "[%d]", n);
-	for (c = nexttiled(m->clients); c; c = nexttiled(c->next)) {
-        xraycfg(c, XrayGrpNone, -1);
+	for (ac = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next)) {
+        xraycfg(c, XrayGrpMonocle, m->sel == c ? (ac = 1, XrayAc) : XrayIn);
 		resize(c, m->wx, m->wy, m->ww - 2 * c->bw, m->wh - 2 * c->bw, 0);
+        xrayapply(c);
     }
+
+    if (!ac)
+        xrayfallback(m, XrayGrpMonocle);
 }
 
 void
