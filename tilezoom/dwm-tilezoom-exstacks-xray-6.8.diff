@@ -28,7 +28,7 @@ index 4b07e6b..3d72141 100644
  	{ MODKEY|ShiftMask,             XK_c,      killclient,     {0} },
  	{ MODKEY,                       XK_t,      setlayout,      {.v = &layouts[0]} },
 diff --git a/dwm.c b/dwm.c
-index a51302b..c509190 100644
+index 577b024..5fe0907 100644
 --- a/dwm.c
 +++ b/dwm.c
 @@ -67,6 +67,22 @@ enum { ClkTagBar, ClkLtSymbol, ClkStatusText, ClkWinTitle,
@@ -71,7 +71,7 @@ index a51302b..c509190 100644
  static void togglebar(const Arg *arg);
  static void togglefloating(const Arg *arg);
  static void toggletag(const Arg *arg);
-@@ -1945,6 +1964,69 @@ tileinfo(void)
+@@ -1943,6 +1962,69 @@ tileinfo(void)
      return ti;
  }
  

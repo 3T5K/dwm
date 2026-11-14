@@ -12,10 +12,10 @@ index 4b07e6b..f1e61d5 100644
  static const int showbar            = 1;        /* 0 means no bar */
  static const int topbar             = 1;        /* 0 means bottom bar */
 diff --git a/dwm.c b/dwm.c
-index 7317b5b..45beaca 100644
+index ccbbe8f..9cfb087 100644
 --- a/dwm.c
 +++ b/dwm.c
-@@ -1772,7 +1772,7 @@ tagmon(const Arg *arg)
+@@ -1770,7 +1770,7 @@ tagmon(const Arg *arg)
  void
  tile(Monitor *m)
  {
@@ -24,7 +24,7 @@ index 7317b5b..45beaca 100644
      Client *c, *xr[2];
      int em = m->pertag->exstacks[m->pertag->curtag].master
        , es = m->pertag->exstacks[m->pertag->curtag].stack;
-@@ -1793,29 +1793,44 @@ tile(Monitor *m)
+@@ -1791,29 +1791,44 @@ tile(Monitor *m)
      if (m->sel && !m->sel->isfloating)
          xr[si >= m->nmaster] = m->sel;
  

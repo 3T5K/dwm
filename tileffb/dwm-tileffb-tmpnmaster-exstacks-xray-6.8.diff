@@ -12,7 +12,7 @@ index 26b9185..20baa8b 100644
  
  static const int tmpnmcfg
 diff --git a/dwm.c b/dwm.c
-index cf309d6..64be62e 100644
+index 6b4887b..f890a0c 100644
 --- a/dwm.c
 +++ b/dwm.c
 @@ -160,6 +160,8 @@ typedef struct {
@@ -32,7 +32,7 @@ index cf309d6..64be62e 100644
  static TileInfo tileinfo(void);
  static void tmpnmdec(Client *c, int arg);
  static void togglebar(const Arg *arg);
-@@ -1958,6 +1961,77 @@ tileinfo(void)
+@@ -1956,6 +1959,77 @@ tileinfo(void)
      return ti;
  }
  
@@ -110,7 +110,7 @@ index cf309d6..64be62e 100644
  void
  tmpnmdec(Client *c, int arg)
  {
-@@ -2064,9 +2138,11 @@ unfocus(Client *c, int setfocus)
+@@ -2062,9 +2136,11 @@ unfocus(Client *c, int setfocus)
  void
  unmanage(Client *c, int destroyed)
  {
@@ -122,7 +122,7 @@ index cf309d6..64be62e 100644
      tmpnmdec(c, TmpNmHookUnmanage);
  	detach(c);
  	detachstack(c);
-@@ -2083,7 +2159,7 @@ unmanage(Client *c, int destroyed)
+@@ -2081,7 +2157,7 @@ unmanage(Client *c, int destroyed)
  		XUngrabServer(dpy);
  	}
  	free(c);

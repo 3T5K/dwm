@@ -20,7 +20,7 @@ index 4b07e6b..26b9185 100644
  static const char *tags[] = { "1", "2", "3", "4", "5", "6", "7", "8", "9" };
  
 diff --git a/dwm.c b/dwm.c
-index a51302b..cf309d6 100644
+index 577b024..6b4887b 100644
 --- a/dwm.c
 +++ b/dwm.c
 @@ -67,6 +67,17 @@ enum { ClkTagBar, ClkLtSymbol, ClkStatusText, ClkWinTitle,
@@ -49,7 +49,7 @@ index a51302b..cf309d6 100644
  static void togglebar(const Arg *arg);
  static void togglefloating(const Arg *arg);
  static void toggletag(const Arg *arg);
-@@ -1646,6 +1658,7 @@ setfullscreen(Client *c, int fullscreen)
+@@ -1644,6 +1656,7 @@ setfullscreen(Client *c, int fullscreen)
  	if (fullscreen && !c->isfullscreen) {
  		XChangeProperty(dpy, c->win, netatom[NetWMState], XA_ATOM, 32,
  			PropModeReplace, (unsigned char*)&netatom[NetWMFullscreen], 1);
@@ -57,7 +57,7 @@ index a51302b..cf309d6 100644
  		c->isfullscreen = 1;
  		c->oldstate = c->isfloating;
  		c->oldbw = c->bw;
-@@ -1945,6 +1958,42 @@ tileinfo(void)
+@@ -1943,6 +1956,42 @@ tileinfo(void)
      return ti;
  }
  
@@ -100,7 +100,7 @@ index a51302b..cf309d6 100644
  void
  togglebar(const Arg *arg)
  {
-@@ -1961,6 +2010,7 @@ togglefloating(const Arg *arg)
+@@ -1959,6 +2008,7 @@ togglefloating(const Arg *arg)
  		return;
  	if (selmon->sel->isfullscreen) /* no support for fullscreen windows */
  		return;
@@ -108,7 +108,7 @@ index a51302b..cf309d6 100644
  	selmon->sel->isfloating = !selmon->sel->isfloating || selmon->sel->isfixed;
  	if (selmon->sel->isfloating) {
          xraycfg(selmon->sel, XrayGrpNone, -1);
-@@ -2017,6 +2067,7 @@ unmanage(Client *c, int destroyed)
+@@ -2015,6 +2065,7 @@ unmanage(Client *c, int destroyed)
  	Monitor *m = c->mon;
  	XWindowChanges wc;
  

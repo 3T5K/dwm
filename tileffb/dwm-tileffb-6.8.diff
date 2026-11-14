@@ -12,7 +12,7 @@ index 4b07e6b..ed31845 100644
  static const char *tags[] = { "1", "2", "3", "4", "5", "6", "7", "8", "9" };
  
 diff --git a/dwm.c b/dwm.c
-index 8fcc457..91fabd6 100644
+index 9d20a8a..23525b2 100644
 --- a/dwm.c
 +++ b/dwm.c
 @@ -149,6 +149,8 @@ typedef struct {
@@ -32,7 +32,7 @@ index 8fcc457..91fabd6 100644
  static TileInfo tileinfo(void);
  static void togglebar(const Arg *arg);
  static void togglefloating(const Arg *arg);
-@@ -1852,6 +1855,51 @@ tileinfo(void)
+@@ -1850,6 +1853,51 @@ tileinfo(void)
      return ti;
  }
  
@@ -84,7 +84,7 @@ index 8fcc457..91fabd6 100644
  void
  togglebar(const Arg *arg)
  {
-@@ -1921,9 +1969,11 @@ unfocus(Client *c, int setfocus)
+@@ -1919,9 +1967,11 @@ unfocus(Client *c, int setfocus)
  void
  unmanage(Client *c, int destroyed)
  {
@@ -96,7 +96,7 @@ index 8fcc457..91fabd6 100644
  	detach(c);
  	detachstack(c);
  	if (!destroyed) {
-@@ -1939,7 +1989,7 @@ unmanage(Client *c, int destroyed)
+@@ -1937,7 +1987,7 @@ unmanage(Client *c, int destroyed)
  		XUngrabServer(dpy);
  	}
  	free(c);

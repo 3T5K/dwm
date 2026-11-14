@@ -11,7 +11,7 @@ index 81c3fc0..4b07e6b 100644
  	{ MODKEY,                       XK_Tab,    view,           {0} },
  	{ MODKEY|ShiftMask,             XK_c,      killclient,     {0} },
 diff --git a/dwm.c b/dwm.c
-index fc2bea8..7317b5b 100644
+index f42a016..ccbbe8f 100644
 --- a/dwm.c
 +++ b/dwm.c
 @@ -66,7 +66,7 @@ enum { WMProtocols, WMDelete, WMState, WMTakeFocus, WMLast }; /* default atoms *
@@ -62,7 +62,7 @@ index fc2bea8..7317b5b 100644
  };
  
  /* compile-time check if all tags fit into an unsigned int bit array. */
-@@ -689,6 +698,9 @@ createmon(void)
+@@ -687,6 +696,9 @@ createmon(void)
  		m->pertag->sellts[i] = m->sellt;
  
  		m->pertag->showbars[i] = m->showbar;
@@ -72,7 +72,7 @@ index fc2bea8..7317b5b 100644
  	}
  
  	return m;
-@@ -833,6 +845,26 @@ expose(XEvent *e)
+@@ -831,6 +843,26 @@ expose(XEvent *e)
  		drawbar(m);
  }
  
@@ -99,7 +99,7 @@ index fc2bea8..7317b5b 100644
  void
  focus(Client *c)
  {
-@@ -1740,29 +1772,60 @@ tagmon(const Arg *arg)
+@@ -1738,29 +1770,60 @@ tagmon(const Arg *arg)
  void
  tile(Monitor *m)
  {

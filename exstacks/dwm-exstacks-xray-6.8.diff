@@ -11,7 +11,7 @@ index 81c3fc0..4b07e6b 100644
  	{ MODKEY,                       XK_Tab,    view,           {0} },
  	{ MODKEY|ShiftMask,             XK_c,      killclient,     {0} },
 diff --git a/dwm.c b/dwm.c
-index 3fc3fb3..4e8c806 100644
+index 08dcafd..f4e86df 100644
 --- a/dwm.c
 +++ b/dwm.c
 @@ -66,7 +66,7 @@ enum { WMProtocols, WMDelete, WMState, WMTakeFocus, WMLast }; /* default atoms *
@@ -60,7 +60,7 @@ index 3fc3fb3..4e8c806 100644
  };
  
  /* configuration, allows nested code to access above variables */
-@@ -664,6 +673,8 @@ createmon(void)
+@@ -662,6 +671,8 @@ createmon(void)
  	m->topbar = topbar;
  	m->lt[0] = &layouts[0];
  	m->lt[1] = &layouts[1 % LENGTH(layouts)];
@@ -69,7 +69,7 @@ index 3fc3fb3..4e8c806 100644
  	strncpy(m->ltsymbol, layouts[0].symbol, sizeof m->ltsymbol);
  	return m;
  }
-@@ -807,6 +818,26 @@ expose(XEvent *e)
+@@ -805,6 +816,26 @@ expose(XEvent *e)
  		drawbar(m);
  }
  
@@ -96,7 +96,7 @@ index 3fc3fb3..4e8c806 100644
  void
  focus(Client *c)
  {
-@@ -1714,29 +1745,58 @@ tagmon(const Arg *arg)
+@@ -1712,29 +1743,58 @@ tagmon(const Arg *arg)
  void
  tile(Monitor *m)
  {
