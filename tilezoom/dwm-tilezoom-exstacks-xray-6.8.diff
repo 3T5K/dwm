@@ -28,7 +28,7 @@ index 4b07e6b..3d72141 100644
  	{ MODKEY|ShiftMask,             XK_c,      killclient,     {0} },
  	{ MODKEY,                       XK_t,      setlayout,      {.v = &layouts[0]} },
 diff --git a/dwm.c b/dwm.c
-index 577b024..5fe0907 100644
+index 92d4343..b433436 100644
 --- a/dwm.c
 +++ b/dwm.c
 @@ -67,6 +67,22 @@ enum { ClkTagBar, ClkLtSymbol, ClkStatusText, ClkWinTitle,

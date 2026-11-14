@@ -12,7 +12,7 @@ index 4b07e6b..ed31845 100644
  static const char *tags[] = { "1", "2", "3", "4", "5", "6", "7", "8", "9" };
  
 diff --git a/dwm.c b/dwm.c
-index 9d20a8a..23525b2 100644
+index 942b9ef..f5a13cd 100644
 --- a/dwm.c
 +++ b/dwm.c
 @@ -149,6 +149,8 @@ typedef struct {

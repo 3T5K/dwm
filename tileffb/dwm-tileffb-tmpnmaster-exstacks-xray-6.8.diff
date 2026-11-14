@@ -12,7 +12,7 @@ index 26b9185..20baa8b 100644
  
  static const int tmpnmcfg
 diff --git a/dwm.c b/dwm.c
-index 6b4887b..f890a0c 100644
+index b6c3a3e..219ce3d 100644
 --- a/dwm.c
 +++ b/dwm.c
 @@ -160,6 +160,8 @@ typedef struct {

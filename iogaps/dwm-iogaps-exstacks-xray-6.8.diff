@@ -12,7 +12,7 @@ index 4b07e6b..f1e61d5 100644
  static const int showbar            = 1;        /* 0 means no bar */
  static const int topbar             = 1;        /* 0 means bottom bar */
 diff --git a/dwm.c b/dwm.c
-index f4e86df..00ff091 100644
+index aab0877..2009ef4 100644
 --- a/dwm.c
 +++ b/dwm.c
 @@ -1743,7 +1743,7 @@ tagmon(const Arg *arg)

@@ -1,5 +1,5 @@
 diff --git a/dwm.c b/dwm.c
-index f4e86df..9d20a8a 100644
+index aab0877..942b9ef 100644
 --- a/dwm.c
 +++ b/dwm.c
 @@ -149,6 +149,16 @@ typedef struct {
@@ -28,7 +28,7 @@ index f4e86df..9d20a8a 100644
  static void togglefloating(const Arg *arg);
  static void toggletag(const Arg *arg);
 @@ -1797,6 +1808,48 @@ tile(Monitor *m)
-         xrayfallback(XrayGrpTileStack);
+         xrayfallback(m, XrayGrpTileStack);
  }
  
 +TileInfo

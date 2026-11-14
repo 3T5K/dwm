@@ -20,7 +20,7 @@ index 4b07e6b..26b9185 100644
  static const char *tags[] = { "1", "2", "3", "4", "5", "6", "7", "8", "9" };
  
 diff --git a/dwm.c b/dwm.c
-index 577b024..6b4887b 100644
+index 92d4343..b6c3a3e 100644
 --- a/dwm.c
 +++ b/dwm.c
 @@ -67,6 +67,17 @@ enum { ClkTagBar, ClkLtSymbol, ClkStatusText, ClkWinTitle,

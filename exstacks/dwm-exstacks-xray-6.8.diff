@@ -11,7 +11,7 @@ index 81c3fc0..4b07e6b 100644
  	{ MODKEY,                       XK_Tab,    view,           {0} },
  	{ MODKEY|ShiftMask,             XK_c,      killclient,     {0} },
 diff --git a/dwm.c b/dwm.c
-index 08dcafd..f4e86df 100644
+index ded2895..aab0877 100644
 --- a/dwm.c
 +++ b/dwm.c
 @@ -66,7 +66,7 @@ enum { WMProtocols, WMDelete, WMState, WMTakeFocus, WMLast }; /* default atoms *
@@ -169,10 +169,10 @@ index 08dcafd..f4e86df 100644
 +    }
 +
 +    if (!ma && m->stacks.master)
-+        xrayfallback(XrayGrpTileMaster);
++        xrayfallback(m, XrayGrpTileMaster);
 +
 +    if (!sa && m->stacks.stack)
-+        xrayfallback(XrayGrpTileStack);
++        xrayfallback(m, XrayGrpTileStack);
  }
  
  void
