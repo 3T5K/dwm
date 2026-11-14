@@ -84,6 +84,8 @@ enum { NetSupported, NetWMName, NetWMState, NetWMCheck,
 enum { WMProtocols, WMDelete, WMState, WMTakeFocus, WMLast }; /* default atoms */
 enum { ClkTagBar, ClkLtSymbol, ClkStatusText, ClkWinTitle,
        ClkClientWin, ClkRootWin, ClkLast }; /* clicks */
+enum { XrayIn, XrayAc };
+enum { XrayGrpNone };
 enum {
     SP_R_TILE_TAG,
     SP_R_GAPS_TAG,
@@ -134,6 +136,7 @@ struct Client {
 	unsigned int tags;
 	int isfixed, isfloating, isurgent, neverfocus, oldstate, isfullscreen, isterminal, noswallow;
 	pid_t pid;
+    int xraygrp, xraystat;
 	Client *next;
 	Client *snext;
 	Client *swallowing;
@@ -328,6 +331,15 @@ static Monitor *wintomon(Window w);
 static int xerror(Display *dpy, XErrorEvent *ee);
 static int xerrordummy(Display *dpy, XErrorEvent *ee);
 static int xerrorstart(Display *dpy, XErrorEvent *ee);
+static Client *xrayac(Monitor *mon, int grp);
+static Client *xrayacs(Monitor *mon, int grp, Client *skip);
+static void xrayapply(Client *c);
+static void xraycfg(Client *c, int grp, int stat);
+static void xraydefhandler(Client *c);
+static Client *xrayfallback(Monitor *mon, int grp);
+static void xrayfocus(Client *c);
+static Client *xraymaybefallback(Monitor *mon, int grp);
+static void xrayunfocus(Client *c);
 static void zoom(const Arg *arg);
 
 static pid_t getparentprocess(pid_t p);
@@ -373,6 +385,9 @@ static Display *dpy;
 static Drw *drw;
 static Monitor *mons, *selmon;
 static Window root, wmcheckwin;
+static void (*xrayhandlers[])(Client *) = {
+    [XrayGrpNone] = NULL,
+};
 
 static xcb_connection_t *xcon;
 
@@ -521,9 +536,14 @@ arrange(Monitor *m)
 void
 arrangemon(Monitor *m)
 {
+    Client *c;
+
 	strncpy(m->ltsymbol, m->lt[m->sellt]->symbol, sizeof m->ltsymbol);
-	if (m->lt[m->sellt]->arrange)
-		m->lt[m->sellt]->arrange(m);
+    if (m->lt[m->sellt]->arrange)
+        m->lt[m->sellt]->arrange(m);
+    else
+        for (c = nexttiled(m->clients); c; c = nexttiled(c->next))
+            xraycfg(c, XrayGrpNone, -1);
 }
 
 void
@@ -1095,6 +1115,7 @@ focus(Client *c)
 {
 	if (!c || !ISVISIBLE(c))
 		for (c = selmon->stack; c && !ISVISIBLE(c); c = c->snext);
+    xrayfocus(c);
 	if (selmon->sel && selmon->sel != c)
 		unfocus(selmon->sel, 0);
 	if (c) {
@@ -1357,6 +1378,7 @@ manage(Window w, XWindowAttributes *wa)
 	c = ecalloc(1, sizeof(Client));
 	c->win = w;
 	c->pid = winpid(w);
+    xraycfg(c, XrayGrpNone, -1);
 	/* geometry */
 	c->x = c->oldx = wa->x;
 	c->y = c->oldy = wa->y;
@@ -1462,8 +1484,10 @@ monocle(Monitor *m)
 			n++;
 	if (n > 0) /* override layout symbol */
 		snprintf(m->ltsymbol, sizeof m->ltsymbol, "[%d]", n);
-	for (c = nexttiled(m->clients); c; c = nexttiled(c->next))
+	for (c = nexttiled(m->clients); c; c = nexttiled(c->next)) {
+        xraycfg(c, XrayGrpNone, -1);
 		resize(c, m->wx, m->wy, m->ww - 2 * c->bw, m->wh - 2 * c->bw, 0);
+    }
 }
 
 void
@@ -1906,6 +1930,7 @@ setfullscreen(Client *c, int fullscreen)
 		c->oldbw = c->bw;
 		c->bw = 0;
 		c->isfloating = 1;
+        xraycfg(c, XrayGrpNone, -1);
 		resizeclient(c, c->mon->mx, c->mon->my, c->mon->mw, c->mon->mh);
 		XRaiseWindow(dpy, c->win);
 	} else if (!fullscreen && c->isfullscreen){
@@ -2457,7 +2482,7 @@ tile(Monitor *m)
 	unsigned int i, n, h, mw, my, ty;
 	Client *c;
 
-	for (n = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), n++);
+	for (n = 0, c = nexttiled(m->clients); c; xraycfg(c, XrayGrpNone, -1), c = nexttiled(c->next), n++);
 	if (n == 0)
 		return;
 
@@ -2496,9 +2521,11 @@ togglefloating(const Arg *arg)
 	if (selmon->sel->isfullscreen) /* no support for fullscreen windows */
 		return;
 	selmon->sel->isfloating = !selmon->sel->isfloating || selmon->sel->isfixed;
-	if (selmon->sel->isfloating)
+	if (selmon->sel->isfloating) {
+        xraycfg(selmon->sel, XrayGrpNone, -1);
 		resize(selmon->sel, selmon->sel->x, selmon->sel->y,
 			selmon->sel->w, selmon->sel->h, 0);
+    }
 	arrange(selmon);
 }
 
@@ -2571,6 +2598,7 @@ unfocus(Client *c, int setfocus)
 		XSetInputFocus(dpy, root, RevertToPointerRoot, CurrentTime);
 		XDeleteProperty(dpy, root, netatom[NetActiveWindow]);
 	}
+    xrayunfocus(c);
 }
 
 void
@@ -3117,6 +3145,122 @@ xerrorstart(Display *dpy, XErrorEvent *ee)
 {
 	die("dwm: another window manager is already running");
 	return -1;
+}
+
+Client *
+xrayac(Monitor *mon, int grp)
+{
+    return xrayacs(mon, grp, NULL);
+}
+
+Client *
+xrayacs(Monitor *mon, int grp, Client *skip)
+{
+    Client *c;
+
+    if (!mon)
+        return NULL;
+
+    for (c = mon->clients; c; c = c->next)
+        if (c != skip && ISVISIBLE(c) && c->xraygrp == grp && c->xraystat == XrayAc)
+            break;
+
+    return c;
+}
+
+void
+xrayapply(Client *c)
+{
+    if (c && xrayhandlers[c->xraygrp])
+        xrayhandlers[c->xraygrp](c);
+}
+
+void
+xraycfg(Client *c, int grp, int stat)
+{
+    if (!c)
+        return;
+
+    if (grp == XrayGrpNone) {
+        c->xraygrp  = XrayGrpNone;
+        c->xraystat = 0;
+        return;
+    }
+
+    c->xraygrp  = grp;
+    c->xraystat = stat;
+}
+
+void
+xraydefhandler(Client *c)
+{
+    switch (c->xraystat) {
+        case XrayIn:
+            XMoveWindow(dpy, c->win, WIDTH(c) * -2, c->y);
+            break;
+        case XrayAc:
+            XMoveWindow(dpy, c->win, c->x, c->y);
+            break;
+    }
+}
+
+Client *
+xrayfallback(Monitor *mon, int grp)
+{
+    Client *c;
+
+    if (grp == XrayGrpNone)
+        return NULL;
+
+    for (c = mon->stack; c; c = c->snext)
+        if (ISVISIBLE(c) && c->xraygrp == grp) {
+            xraycfg(c, grp, XrayAc);
+            xrayapply(c);
+            return c;
+        }
+
+    return NULL;
+}
+
+void
+xrayfocus(Client *c)
+{
+    Client *i;
+
+    if (!c || c->xraygrp == XrayGrpNone)
+        return;
+
+    xraycfg(c, c->xraygrp, XrayAc);
+    xrayapply(c);
+    for (i = c->mon->clients; i; i = i->next)
+        if (i != c && ISVISIBLE(i) && i->xraygrp == c->xraygrp && i->xraystat == XrayAc) {
+            xraycfg(i, i->xraygrp, XrayIn);
+            xrayapply(i);
+        }
+}
+
+Client *
+xraymaybefallback(Monitor *mon, int grp)
+{
+    Client *c;
+
+    if (grp == XrayGrpNone)
+        return NULL;
+
+    c = xrayac(mon, grp);
+    return c ? c : xrayfallback(mon, grp);
+}
+
+void
+xrayunfocus(Client *c)
+{
+    if (!c || c->xraygrp == XrayGrpNone)
+        return;
+
+    if (xrayacs(c->mon, c->xraygrp, c)) {
+        xraycfg(c, c->xraygrp, XrayIn);
+        xrayapply(c);
+    }
 }
 
 void
