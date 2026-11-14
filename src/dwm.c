@@ -85,7 +85,7 @@ enum { WMProtocols, WMDelete, WMState, WMTakeFocus, WMLast }; /* default atoms *
 enum { ClkTagBar, ClkLtSymbol, ClkStatusText, ClkWinTitle,
        ClkClientWin, ClkRootWin, ClkLast }; /* clicks */
 enum { XrayIn, XrayAc };
-enum { XrayGrpNone, XrayGrpMonocle };
+enum { XrayGrpNone, XrayGrpMonocle, XrayGrpTileMaster, XrayGrpTileStack };
 enum {
     SP_R_TILE_TAG,
     SP_R_GAPS_TAG,
@@ -123,6 +123,11 @@ typedef struct {
 	void (*func)(const Arg *arg);
 	const Arg arg;
 } Button;
+
+typedef struct {
+    int master;
+    int stack;
+} ExStack;
 
 typedef struct Monitor Monitor;
 typedef struct Client Client;
@@ -254,6 +259,7 @@ static void drawbars(void);
 static int drawstatusbar(Monitor *m, int bh, char* text);
 static void enternotify(XEvent *e);
 static void expose(XEvent *e);
+static void exstack(const Arg *arg);
 static void focus(Client *c);
 static void focusin(XEvent *e);
 static void focusmon(const Arg *arg);
@@ -390,8 +396,10 @@ static Drw *drw;
 static Monitor *mons, *selmon;
 static Window root, wmcheckwin;
 static void (*xrayhandlers[])(Client *) = {
-    [XrayGrpNone]    = NULL,
-    [XrayGrpMonocle] = xraydefhandler,
+    [XrayGrpNone]       = NULL,
+    [XrayGrpMonocle]    = xraydefhandler,
+    [XrayGrpTileMaster] = xraydefhandler,
+    [XrayGrpTileStack]  = xraydefhandler,
 };
 
 static xcb_connection_t *xcon;
@@ -406,6 +414,7 @@ struct Pertag {
 	unsigned int sellts[LENGTH(tags) + 1]; /* selected layouts */
 	const Layout *ltidxs[LENGTH(tags) + 1][2]; /* matrix of tags and layouts indexes  */
 	int showbars[LENGTH(tags) + 1]; /* display bar for the current tag */
+    ExStack exstacks[LENGTH(tags) + 1]; /* states of stacks in a tag with the tile layout */
 };
 
 /* compile-time check if all tags fit into an unsigned int bit array. */
@@ -926,6 +935,9 @@ createmon(void)
 		m->pertag->sellts[i] = m->sellt;
 
 		m->pertag->showbars[i] = m->showbar;
+
+        m->pertag->exstacks[i].master = 0;
+        m->pertag->exstacks[i].stack  = 0;
 	}
 
 	return m;
@@ -1202,6 +1214,26 @@ expose(XEvent *e)
 
 	if (ev->count == 0 && (m = wintomon(ev->window)))
 		drawbar(m);
+}
+
+void
+exstack(const Arg *arg)
+{
+    Client *c;
+    int n, ct = selmon->pertag->curtag;
+
+    if (selmon->lt[selmon->sellt]->arrange != &tile
+            || !selmon->sel || selmon->sel->isfloating)
+        return;
+
+    for (n = 0, c = nexttiled(selmon->clients); c && selmon->sel != c; c = nexttiled(c->next), ++n);
+
+    if (n < selmon->nmaster)
+        selmon->pertag->exstacks[ct].master = !selmon->pertag->exstacks[ct].master;
+    else
+        selmon->pertag->exstacks[ct].stack = !selmon->pertag->exstacks[ct].stack;
+
+    arrange(selmon);
 }
 
 void
@@ -2578,29 +2610,60 @@ tagmon(const Arg *arg)
 void
 tile(Monitor *m)
 {
-	unsigned int i, n, h, mw, my, ty;
-	Client *c;
+    unsigned int i, n, h, mw, my, ty, si, ma, sa;
+    Client *c, *xr[2];
+    int em = m->pertag->exstacks[m->pertag->curtag].master
+      , es = m->pertag->exstacks[m->pertag->curtag].stack;
 
-	for (n = 0, c = nexttiled(m->clients); c; xraycfg(c, XrayGrpNone, -1), c = nexttiled(c->next), n++);
-	if (n == 0)
-		return;
+    for (n = si = 0, xr[0] = xr[1] = NULL, c = nexttiled(m->clients); c; c = nexttiled(c->next), ++n) {
+        if (m->sel == c)
+            si = n;
 
-	if (n > m->nmaster)
-		mw = m->nmaster ? m->ww * m->mfact : 0;
-	else
-		mw = m->ww;
-	for (i = my = ty = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), i++)
-		if (i < m->nmaster) {
-			h = (m->wh - my) / (MIN(n, m->nmaster) - i);
-			resize(c, m->wx, m->wy + my, mw - (2*c->bw), h - (2*c->bw), 0);
+        if (c->xraystat == XrayAc) switch (c->xraygrp) {
+            case XrayGrpTileMaster : xr[0] = c; break;
+            case XrayGrpTileStack  : xr[1] = c; break;
+        }
+    }
+
+    if (n == 0)
+        return;
+
+    if (m->sel && !m->sel->isfloating)
+        xr[si >= m->nmaster] = m->sel;
+
+    if (n > m->nmaster)
+        mw = m->nmaster ? m->ww * m->mfact : 0;
+    else
+        mw = m->ww;
+    for (i = ma = sa = my = ty = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), i++) {
+        if (i < m->nmaster) {
+            xraycfg( c
+                   , em ? XrayGrpTileMaster : XrayGrpNone
+                   , xr[0] == c ? (ma = 1, XrayAc) : XrayIn
+                   );
+            h = em ? m->wh : (m->wh - my) / (MIN(n, m->nmaster) - i);
+            resize(c, m->wx, m->wy + my * !em, mw - (2*c->bw), h - (2*c->bw), 0);
 			if (my + HEIGHT(c) < m->wh)
 				my += HEIGHT(c);
-		} else {
-			h = (m->wh - ty) / (n - i);
-			resize(c, m->wx + mw, m->wy + ty, m->ww - mw - (2*c->bw), h - (2*c->bw), 0);
-			if (ty + HEIGHT(c) < m->wh)
-				ty += HEIGHT(c);
-		}
+        } else {
+            xraycfg( c
+                   , es ? XrayGrpTileStack : XrayGrpNone
+                   , xr[1] == c ? (sa = 1, XrayAc) : XrayIn
+                   );
+            h = es ? m->wh : (m->wh - ty) / (n - i);
+            resize(c, m->wx + mw, m->wy + ty * !es, m->ww - mw - (2*c->bw), h - (2*c->bw), 0);
+            if (ty + HEIGHT(c) < m->wh)
+                ty += HEIGHT(c);
+        }
+
+        xrayapply(c);
+    }
+
+    if (!ma && em)
+        xrayfallback(m, XrayGrpTileMaster);
+
+    if (!sa && es)
+        xrayfallback(m, XrayGrpTileStack);
 }
 
 void
