@@ -89,6 +89,7 @@ typedef struct {
 } BarVec4;
 
 typedef struct {
+    unsigned int added_height;
     struct {
         int uniform_width;
         struct {
@@ -98,6 +99,10 @@ typedef struct {
     } tags;
     BarVec4 borders;
     BarVec4 padding;
+    struct {
+        unsigned int vert;
+        unsigned int horz;
+    } gaps;
 } BarCfg;
 
 typedef struct Monitor Monitor;
@@ -1641,6 +1646,7 @@ setup(void)
     bh += barcfg.borders.bottom;
     bh += barcfg.padding.top;
     bh += barcfg.padding.bottom;
+    bh += barcfg.added_height;
 	updategeom();
 	/* init atoms */
 	utf8string = XInternAtom(dpy, "UTF8_STRING", False);
