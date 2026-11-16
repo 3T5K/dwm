@@ -22,6 +22,7 @@ static const BarCfg barcfg =
 {
     .tags =
     {
+        .uniform_width = 1,
         .padding =
         {
             .left  = 5,

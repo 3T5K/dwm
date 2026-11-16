@@ -83,6 +83,7 @@ typedef struct {
 
 typedef struct {
     struct {
+        int uniform_width;
         struct {
             unsigned int left;
             unsigned int right;
@@ -705,10 +706,10 @@ dirtomon(int dir)
 void
 drawbar(Monitor *m)
 {
-	int x, w, tw = 0, tpl, tpr;
+	int x, w, tw = 0, tpl, tpr, tuw, tmw, tuwpl;
 	int boxs = drw->fonts->h / 9;
 	int boxw = drw->fonts->h / 6 + 2;
-	unsigned int i, occ = 0, urg = 0;
+	unsigned int i, occ = 0, urg = 0, tws[LENGTH(tags)];
 	Client *c;
 
 	if (!m->showbar)
@@ -724,24 +725,40 @@ drawbar(Monitor *m)
     /* tagset */
     tpl = barcfg.tags.padding.left;
     tpr = barcfg.tags.padding.right;
+    tuw = barcfg.tags.uniform_width != 0;
+    tmw = 0;
+    for (i = 0; i < LENGTH(tags); ++i)
+        tws[i] = TEXTW(tags[i]);
 
-	for (c = m->clients; c; c = c->next) {
-		occ |= c->tags;
-		if (c->isurgent)
-			urg |= c->tags;
-	}
+    for (c = m->clients; c; c = c->next) {
+        occ |= c->tags;
+        if (c->isurgent)
+            urg |= c->tags;
+    }
 
-	x = 0;
-	for (i = 0; i < LENGTH(tags); i++) {
-		w = TEXTW(tags[i]) + tpl + tpr;
-		drw_setscheme(drw, scheme[m->tagset[m->seltags] & 1 << i ? SchemeSel : SchemeNorm]);
-		drw_text(drw, x, 0, w, bh, tpl, tags[i], urg & 1 << i);
-		if (occ & 1 << i)
-			drw_rect(drw, x + boxs, boxs, boxw, boxw,
-				m == selmon && selmon->sel && selmon->sel->tags & 1 << i,
-				urg & 1 << i);
-		x += w;
-	}
+    if (tuw)
+        for (i = 0; i < LENGTH(tags); ++i)
+            if (tws[i] > tmw)
+                tmw = tws[i];
+
+    x = 0;
+    for (i = 0; i < LENGTH(tags); i++) {
+        if (tuw) {
+            tuwpl = (tmw - tws[i]) / 2;
+            w = tmw;
+        } else {
+            tuwpl = 0;
+            w = tws[i];
+        }
+        w += tpl + tpr;
+        drw_setscheme(drw, scheme[m->tagset[m->seltags] & 1 << i ? SchemeSel : SchemeNorm]);
+        drw_text(drw, x, 0, w, bh, tpl + tuwpl, tags[i], urg & 1 << i);
+        if (occ & 1 << i)
+            drw_rect(drw, x + boxs, boxs, boxw, boxw,
+                     m == selmon && selmon->sel && selmon->sel->tags & 1 << i,
+                     urg & 1 << i);
+        x += w;
+    }
 
     /* layout */
 	w = TEXTW(m->ltsymbol);
