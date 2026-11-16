@@ -81,6 +81,15 @@ typedef struct {
 	const Arg arg;
 } Button;
 
+typedef struct {
+    struct {
+        struct {
+            unsigned int left;
+            unsigned int right;
+        } padding;
+    } tags;
+} BarCfg;
+
 typedef struct Monitor Monitor;
 typedef struct Client Client;
 struct Client {
@@ -696,7 +705,7 @@ dirtomon(int dir)
 void
 drawbar(Monitor *m)
 {
-	int x, w, tw = 0;
+	int x, w, tw = 0, tpl, tpr;
 	int boxs = drw->fonts->h / 9;
 	int boxw = drw->fonts->h / 6 + 2;
 	unsigned int i, occ = 0, urg = 0;
@@ -712,26 +721,34 @@ drawbar(Monitor *m)
 		drw_text(drw, m->ww - tw, 0, tw, bh, 0, stext, 0);
 	}
 
+    /* tagset */
+    tpl = barcfg.tags.padding.left;
+    tpr = barcfg.tags.padding.right;
+
 	for (c = m->clients; c; c = c->next) {
 		occ |= c->tags;
 		if (c->isurgent)
 			urg |= c->tags;
 	}
+
 	x = 0;
 	for (i = 0; i < LENGTH(tags); i++) {
-		w = TEXTW(tags[i]);
+		w = TEXTW(tags[i]) + tpl + tpr;
 		drw_setscheme(drw, scheme[m->tagset[m->seltags] & 1 << i ? SchemeSel : SchemeNorm]);
-		drw_text(drw, x, 0, w, bh, 0, tags[i], urg & 1 << i);
+		drw_text(drw, x, 0, w, bh, tpl, tags[i], urg & 1 << i);
 		if (occ & 1 << i)
 			drw_rect(drw, x + boxs, boxs, boxw, boxw,
 				m == selmon && selmon->sel && selmon->sel->tags & 1 << i,
 				urg & 1 << i);
 		x += w;
 	}
+
+    /* layout */
 	w = TEXTW(m->ltsymbol);
 	drw_setscheme(drw, scheme[SchemeNorm]);
 	x = drw_text(drw, x, 0, w, bh, 0, m->ltsymbol, 0);
 
+    /* selected window title */
 	if ((w = m->ww - tw - x) > bh) {
 		if (m->sel) {
 			drw_setscheme(drw, scheme[m == selmon ? SchemeSel : SchemeNorm]);
