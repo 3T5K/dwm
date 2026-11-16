@@ -89,6 +89,12 @@ typedef struct {
             unsigned int right;
         } padding;
     } tags;
+    struct {
+        unsigned int left;
+        unsigned int right;
+        unsigned int top;
+        unsigned int bottom;
+    } borders;
 } BarCfg;
 
 typedef struct Monitor Monitor;
@@ -706,7 +712,10 @@ dirtomon(int dir)
 void
 drawbar(Monitor *m)
 {
-	int x, w, tw = 0, tpl, tpr, tuw, tmw, tuwpl;
+	int x, w, tw = 0;
+    int tpl, tpr, tuw, tmw, tuwpl;
+    int bl, br, bt, bb;
+    int fx, fy, fw, fh;
 	int boxs = drw->fonts->h / 9;
 	int boxw = drw->fonts->h / 6 + 2;
 	unsigned int i, occ = 0, urg = 0, tws[LENGTH(tags)];
@@ -715,13 +724,35 @@ drawbar(Monitor *m)
 	if (!m->showbar)
 		return;
 
+    x  = 0;
+    fx = 0;
+    fy = m->by;
+    fh = bh;
+    fw = m->ww;
+
+    /* borders */
+    drw_setscheme(drw, scheme[SchemeNorm]);
+    if ((bl = barcfg.borders.left) != 0)
+        drw_rect(drw, 0, m->by, bl, bh, 1, 0);
+    if ((br = barcfg.borders.right) != 0)
+        drw_rect(drw, m->ww - barcfg.borders.right, m->by, br, bh, 1, 0);
+    if ((bt = barcfg.borders.top) != 0)
+        drw_rect(drw, 0, m->by, m->ww, bt, 1, 0);
+    if ((bb = barcfg.borders.bottom) != 0)
+        drw_rect(drw, 0, bh - barcfg.borders.bottom, m->ww, bb, 1, 0);
+    fx += bl;
+    fy += bt;
+    fw -= bl + br;
+    fh -= bt + bb;
+    x  += bl;
+
 	/* draw status first so it can be overdrawn by tags later */
 	if (m == selmon) { /* status is only drawn on selected monitor */
 		drw_setscheme(drw, scheme[SchemeNorm]);
-		tw = TEXTW(stext) + 2; /* 2px right padding */
-		drw_text(drw, m->ww - tw, 0, tw, bh, 0, stext, 0);
+		tw = TEXTW(stext);
+		drw_text(drw, fx + fw - tw, fy, tw, fh, 0, stext, 0);
 	}
-
+    
     /* tagset */
     tpl = barcfg.tags.padding.left;
     tpr = barcfg.tags.padding.right;
@@ -741,7 +772,6 @@ drawbar(Monitor *m)
             if (tws[i] > tmw)
                 tmw = tws[i];
 
-    x = 0;
     for (i = 0; i < LENGTH(tags); i++) {
         if (tuw) {
             tuwpl = (tmw - tws[i]) / 2;
@@ -752,9 +782,9 @@ drawbar(Monitor *m)
         }
         w += tpl + tpr;
         drw_setscheme(drw, scheme[m->tagset[m->seltags] & 1 << i ? SchemeSel : SchemeNorm]);
-        drw_text(drw, x, 0, w, bh, tpl + tuwpl, tags[i], urg & 1 << i);
+        drw_text(drw, x, fy, w, fh, tpl + tuwpl, tags[i], urg & 1 << i);
         if (occ & 1 << i)
-            drw_rect(drw, x + boxs, boxs, boxw, boxw,
+            drw_rect(drw, x + boxs, fy + boxs, boxw, boxw,
                      m == selmon && selmon->sel && selmon->sel->tags & 1 << i,
                      urg & 1 << i);
         x += w;
@@ -763,18 +793,18 @@ drawbar(Monitor *m)
     /* layout */
 	w = TEXTW(m->ltsymbol);
 	drw_setscheme(drw, scheme[SchemeNorm]);
-	x = drw_text(drw, x, 0, w, bh, 0, m->ltsymbol, 0);
+	x = drw_text(drw, x, fy, w, fh, 0, m->ltsymbol, 0);
 
     /* selected window title */
-	if ((w = m->ww - tw - x) > bh) {
+	if ((w = fx + fw - tw - x) > fh) {
 		if (m->sel) {
 			drw_setscheme(drw, scheme[m == selmon ? SchemeSel : SchemeNorm]);
-			drw_text(drw, x, 0, w, bh, 0, m->sel->name, 0);
+			drw_text(drw, x, fy, w, fh, 0, m->sel->name, 0);
 			if (m->sel->isfloating)
 				drw_rect(drw, x + boxs, boxs, boxw, boxw, m->sel->isfixed, 0);
 		} else {
 			drw_setscheme(drw, scheme[SchemeNorm]);
-			drw_rect(drw, x, 0, w, bh, 1, 1);
+			drw_rect(drw, x, fy, w, fh, 1, 1);
 		}
 	}
 	drw_map(drw, m->barwin, 0, 0, m->ww, bh);
@@ -1594,7 +1624,9 @@ setup(void)
 	drw = drw_create(dpy, screen, root, sw, sh);
 	if (!drw_fontset_create(drw, fonts, LENGTH(fonts)))
 		die("no fonts could be loaded.");
-	bh = drw->fonts->h + 2;
+	bh  = drw->fonts->h;
+    bh += barcfg.borders.top;
+    bh += barcfg.borders.bottom;
 	updategeom();
 	/* init atoms */
 	utf8string = XInternAtom(dpy, "UTF8_STRING", False);

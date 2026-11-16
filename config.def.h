@@ -29,6 +29,13 @@ static const BarCfg barcfg =
             .right = 5,
         }
     }
+    .borders =
+    {
+        .left  = 5,
+        .right = 5,
+        .top   = 5,
+        .down  = 5,
+    }
 };
 
 /* tagging */
