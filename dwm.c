@@ -82,6 +82,13 @@ typedef struct {
 } Button;
 
 typedef struct {
+    unsigned int left;
+    unsigned int right;
+    unsigned int top;
+    unsigned int bottom;
+} BarVec4;
+
+typedef struct {
     struct {
         int uniform_width;
         struct {
@@ -89,12 +96,8 @@ typedef struct {
             unsigned int right;
         } padding;
     } tags;
-    struct {
-        unsigned int left;
-        unsigned int right;
-        unsigned int top;
-        unsigned int bottom;
-    } borders;
+    BarVec4 borders;
+    BarVec4 padding;
 } BarCfg;
 
 typedef struct Monitor Monitor;
@@ -733,18 +736,27 @@ drawbar(Monitor *m)
     /* borders */
     drw_setscheme(drw, scheme[SchemeNorm]);
     if ((bl = barcfg.borders.left) != 0)
-        drw_rect(drw, 0, m->by, bl, bh, 1, 0);
+        drw_rect(drw, fx, fy, bl, fh, 1, 0);
     if ((br = barcfg.borders.right) != 0)
-        drw_rect(drw, m->ww - barcfg.borders.right, m->by, br, bh, 1, 0);
+        drw_rect(drw, fw - barcfg.borders.right, fy, br, fh, 1, 0);
     if ((bt = barcfg.borders.top) != 0)
-        drw_rect(drw, 0, m->by, m->ww, bt, 1, 0);
+        drw_rect(drw, fx, fy, fw, bt, 1, 0);
     if ((bb = barcfg.borders.bottom) != 0)
-        drw_rect(drw, 0, bh - barcfg.borders.bottom, m->ww, bb, 1, 0);
+        drw_rect(drw, fx, fh - barcfg.borders.bottom, fw, bb, 1, 0);
     fx += bl;
     fy += bt;
     fw -= bl + br;
     fh -= bt + bb;
     x  += bl;
+
+    /* padding */
+    drw_setscheme(drw, scheme[SchemeNorm]);
+    drw_rect(drw, fx, fy, fw, fh, 1, 1);
+    fx += barcfg.padding.left;
+    fy += barcfg.padding.top;
+    fh -= barcfg.padding.top + barcfg.padding.bottom;
+    fw -= barcfg.padding.left + barcfg.padding.right;
+    x  += barcfg.padding.left;
 
 	/* draw status first so it can be overdrawn by tags later */
 	if (m == selmon) { /* status is only drawn on selected monitor */
@@ -1627,6 +1639,8 @@ setup(void)
 	bh  = drw->fonts->h;
     bh += barcfg.borders.top;
     bh += barcfg.borders.bottom;
+    bh += barcfg.padding.top;
+    bh += barcfg.padding.bottom;
 	updategeom();
 	/* init atoms */
 	utf8string = XInternAtom(dpy, "UTF8_STRING", False);
