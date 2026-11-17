@@ -113,6 +113,9 @@ typedef struct {
 typedef struct {
     BarPX added_height;
     struct {
+        BarBool all_mons;
+    } status;
+    struct {
         BarBool uniform_width;
         BarLR padding;
         struct {
@@ -788,7 +791,7 @@ drawbar(Monitor *m)
     x  += barcfg.padding.left;
 
     /* status */
-	if (m == selmon) { /* status is only drawn on selected monitor */
+	if (m == selmon || barcfg.status.all_mons) { /* status is only drawn on selected monitor */
 		drw_setscheme(drw, scheme[SchemeNorm]);
 		tw = TEXTW(stext);
 		drw_text(drw, fx + fw - tw, fy, tw, fh, 0, stext, 0);
@@ -2123,9 +2126,14 @@ updatesizehints(Client *c)
 void
 updatestatus(void)
 {
+    Monitor *m;
 	if (!gettextprop(root, XA_WM_NAME, stext, sizeof(stext)))
 		strcpy(stext, "dwm-"VERSION);
-	drawbar(selmon);
+    if (barcfg.status.all_mons)
+        for (m = mons; m; m = m->next)
+            drawbar(m);
+    else
+        drawbar(selmon);
 }
 
 void
