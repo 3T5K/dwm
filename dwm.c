@@ -100,6 +100,14 @@ typedef int BarBool;
 typedef const char *BarStr;
 
 typedef struct {
+    int x, y, w, h;
+} BarDrawDims;
+
+typedef struct {
+    int offset, width;
+} BarIndicator;
+
+typedef struct {
     BarPX left;
     BarPX right;
     BarPX top;
@@ -771,12 +779,20 @@ dirtomon(int dir)
 	return m;
 }
 
-typedef struct {
-    int x, y, w, h;
-} BarDrawDims;
+int
+drawtrs(BarDrawDims *dd, int x, BarPX trs)
+{
+    if (trs != 0) {
+        drw_setscheme(drw, scheme[SchemeBarPadding]);
+        drw_rect(drw, x, dd->y, trs, dd->h, 1, 0);
+        x += trs;
+    }
+
+    return x;
+}
 
 int
-drawborders(BarDrawDims *dd)
+drawborders(BarDrawDims *dd, int x)
 {
     BarPX bl, br, bt, bb;
 
@@ -793,7 +809,19 @@ drawborders(BarDrawDims *dd)
     dd->y += bt;
     dd->w -= bl + br;
     dd->h -= bt + bb;
-    return bl;
+    return x + bl;
+}
+
+int
+drawpadding(BarDrawDims *dd, int x)
+{
+    drw_setscheme(drw, scheme[SchemeBarPadding]);
+    drw_rect(drw, dd->x, dd->y, dd->w, dd->h, 1, 0);
+    dd->x += barcfg.padding.left;
+    dd->y += barcfg.padding.top;
+    dd->h -= barcfg.padding.top + barcfg.padding.bottom;
+    dd->w -= barcfg.padding.left + barcfg.padding.right;
+    return x + barcfg.padding.left;
 }
 
 void
@@ -802,50 +830,27 @@ drawgaps(BarDrawDims *dd)
     dd->w -= barcfg.gaps.horz * 2;
 }
 
-void
-drawbar(Monitor *m)
+int
+drawstatus(Monitor *m, BarDrawDims *dd)
 {
-    BarStr tss, ss;
-	int x, w, tw = 0;
-    BarPX tpl, tpr, tuw, tmw, tuwpl, tspl, tspr, tsw;
-    BarPX lpl, lpr;
-    BarPX spl, spr;
-    BarPX trs;
-    BarDrawDims dd;
-	int boxs = drw->fonts->h / barcfg.indicator_box.pos_denom;
-	int boxw = drw->fonts->h / barcfg.indicator_box.width_denom + 2;
-	unsigned int i, occ = 0, urg = 0, tws[LENGTH(tags)];
-	Client *c;
-
-	if (!m->showbar)
-		return;
-
-    x    = 0;
-    dd.x = 0;
-    dd.y = 0;
-    dd.h = bh;
-    dd.w = m->ww;
-
-    drawgaps(&dd);
-    x += drawborders(&dd);
-
-    /* padding */
-    drw_setscheme(drw, scheme[SchemeBarPadding]);
-    drw_rect(drw, dd.x, dd.y, dd.w, dd.h, 1, 0);
-    dd.x += barcfg.padding.left;
-    dd.y += barcfg.padding.top;
-    dd.h -= barcfg.padding.top + barcfg.padding.bottom;
-    dd.w -= barcfg.padding.left + barcfg.padding.right;
-    x  += barcfg.padding.left;
-
-    /* status */
+    int tw = 0;
 	if (m == selmon || barcfg.status.all_mons) {
 		drw_setscheme(drw, scheme[SchemeBarStatus]);
 		tw = TEXTW(stext) + barcfg.status.padding.left + barcfg.status.padding.right;
-		drw_text(drw, dd.x + dd.w - tw, dd.y, tw, dd.h, barcfg.status.padding.left, stext, 0);
+		drw_text(drw, dd->x + dd->w - tw, dd->y, tw, dd->h, barcfg.status.padding.left, stext, 0);
 	}
-    
-    /* tagset */
+
+    return tw;
+}
+
+int drawtagset(Monitor *m, BarDrawDims *dd, int x, BarIndicator in)
+{
+    Client *c;
+    int w;
+    BarPX tpl, tpr, tuw, tmw, tspl, tspr, tsw, tuwpl;
+	unsigned int i, occ = 0, urg = 0, tws[LENGTH(tags)];
+    BarStr tss;
+
     tpl = barcfg.tags.padding.left;
     tpr = barcfg.tags.padding.right;
     tuw = barcfg.tags.uniform_width != 0;
@@ -878,79 +883,108 @@ drawbar(Monitor *m)
         }
         w += tpl + tpr;
         drw_setscheme(drw, scheme[m->tagset[m->seltags] & 1 << i ? SchemeBarTagsSel : SchemeBarTagsNorm]);
-        drw_text(drw, x, dd.y, w, dd.h, tpl + tuwpl, tags[i], urg & 1 << i);
+        drw_text(drw, x, dd->y, w, dd->h, tpl + tuwpl, tags[i], urg & 1 << i);
         if (occ & 1 << i)
-            drw_rect(drw, x + boxs, dd.y + boxs, boxw, boxw,
+            drw_rect(drw, x + in.offset, dd->y + in.offset, in.width, in.width,
                      m == selmon && selmon->sel && selmon->sel->tags & 1 << i,
                      urg & 1 << i);
         x += w;
 
         if (i + 1 != LENGTH(tags)) {
             drw_setscheme(drw, scheme[SchemeBarTagsSep]);
-            drw_text(drw, x, dd.y, tsw, dd.h, tspl, tss, 0);
+            drw_text(drw, x, dd->y, tsw, dd->h, tspl, tss, 0);
             x += tsw;
         }
     }
 
-    trs = barcfg.trailing_space.tags;
-    if (trs != 0) {
-        drw_setscheme(drw, scheme[SchemeBarPadding]);
-        drw_rect(drw, x, dd.y, trs, dd.h, 1, 0);
-        x += trs;
+    return drawtrs(dd, x, barcfg.trailing_space.tags);
+}
+
+int
+drawlayout(Monitor *m, BarDrawDims *dd, int x)
+{
+    int w;
+    BarPX lpl, lpr;
+
+    if (!barcfg.layout.show)
+        return x;
+
+    drw_setscheme(drw, scheme[SchemeBarLayout]);
+    lpl = barcfg.layout.padding.left;
+    lpr = barcfg.layout.padding.right;
+    w = lpl + TEXTW(m->ltsymbol) + lpr;
+    x = drw_text(drw, x, dd->y, w, dd->h, lpl, m->ltsymbol, 0);
+    return drawtrs(dd, x, barcfg.trailing_space.layout);
+}
+
+int
+drawselmon(Monitor *m, BarDrawDims *dd, int x)
+{
+    int w;
+    BarPX spl, spr;
+    BarStr ss;
+
+    if (!barcfg.selmon.show)
+        return x;
+
+    drw_setscheme(drw, scheme[SchemeBarSelmon]);
+    spl = barcfg.selmon.padding.left;
+    spr = barcfg.selmon.padding.right;
+    ss  = m == selmon ? barcfg.selmon.active : barcfg.selmon.inactive;
+    w = spl + TEXTW(ss) + spr;
+    x = drw_text(drw, x, dd->y, w, dd->h, spl, ss, 0);
+    return drawtrs(dd, x, barcfg.trailing_space.selmon);
+}
+
+void
+drawtitle(Monitor *m, BarDrawDims *dd, int x, int tw, BarIndicator in)
+{
+    int w;
+
+    w = dd->x + dd->w - tw - x - barcfg.trailing_space.title;
+    if (!barcfg.title.show || w <= dd->h)
+        return;
+
+    if (m->sel) {
+        drw_setscheme(drw, scheme[m == selmon ? SchemeBarTitleSel : SchemeBarTitleNorm]);
+        drw_text(drw, x, dd->y, w, dd->h, barcfg.title.left_padding, m->sel->name, 0);
+        if (m->sel->isfloating)
+            drw_rect(drw, x + in.offset, in.offset, in.width, in.width, m->sel->isfixed, 0);
+    } else {
+        drw_setscheme(drw, scheme[SchemeBarTitleNone]);
+        drw_rect(drw, x, dd->y, w, dd->h, 1, 1);
     }
 
-    /* layout */
-    if (barcfg.layout.show) {
-        drw_setscheme(drw, scheme[SchemeBarLayout]);
-        lpl = barcfg.layout.padding.left;
-        lpr = barcfg.layout.padding.right;
-        w = lpl + TEXTW(m->ltsymbol) + lpr;
-        x = drw_text(drw, x, dd.y, w, dd.h, lpl, m->ltsymbol, 0);
+    drawtrs(dd, x + w, barcfg.trailing_space.title);
+}
 
-        trs = barcfg.trailing_space.layout;
-        if (trs != 0) {
-            drw_setscheme(drw, scheme[SchemeBarPadding]);
-            drw_rect(drw, x, dd.y, trs, dd.h, 1, 0);
-            x += trs;
-        }
-    }
+void
+drawbar(Monitor *m)
+{
+	int x, tw;
+    BarDrawDims dd;
+    BarIndicator in;
 
-    /* selmon */
-    if (barcfg.selmon.show) {
-        drw_setscheme(drw, scheme[SchemeBarSelmon]);
-        spl = barcfg.selmon.padding.left;
-        spr = barcfg.selmon.padding.right;
-        ss  = m == selmon ? barcfg.selmon.active : barcfg.selmon.inactive;
-        w = spl + TEXTW(ss) + spr;
-        x = drw_text(drw, x, dd.y, w, dd.h, spl, ss, 0);
+	if (!m->showbar)
+		return;
 
-        trs = barcfg.trailing_space.selmon;
-        if (trs != 0) {
-            drw_setscheme(drw, scheme[SchemeBarPadding]);
-            drw_rect(drw, x, dd.y, trs, dd.h, 1, 0);
-            x += trs;
-        }
-    }
+	in.offset = drw->fonts->h / barcfg.indicator_box.pos_denom;
+	in.width  = drw->fonts->h / barcfg.indicator_box.width_denom + 2;
+    tw        = 0;
+    x         = 0;
+    dd.x      = 0;
+    dd.y      = 0;
+    dd.h      = bh;
+    dd.w      = m->ww;
 
-    /* title */
-	if (barcfg.title.show && (w = dd.x + dd.w - tw - x - barcfg.trailing_space.title) > dd.h) {
-		if (m->sel) {
-			drw_setscheme(drw, scheme[m == selmon ? SchemeBarTitleSel : SchemeBarTitleNorm]);
-			drw_text(drw, x, dd.y, w, dd.h, barcfg.title.left_padding, m->sel->name, 0);
-			if (m->sel->isfloating)
-				drw_rect(drw, x + boxs, boxs, boxw, boxw, m->sel->isfixed, 0);
-		} else {
-			drw_setscheme(drw, scheme[SchemeBarTitleNone]);
-			drw_rect(drw, x, dd.y, w, dd.h, 1, 1);
-		}
-
-        trs = barcfg.trailing_space.title;
-        if (trs != 0) {
-            drw_setscheme(drw, scheme[SchemeBarPadding]);
-            drw_rect(drw, x + w, dd.y, trs, dd.h, 1, 0);
-            x += trs;
-        }
-	}
+          drawgaps    (   &dd           );
+    x   = drawborders (   &dd, x        );
+    x   = drawpadding (   &dd, x        );
+    tw  = drawstatus  (m, &dd           );
+    x   = drawtagset  (m, &dd, x, in    );
+    x   = drawlayout  (m, &dd, x        );
+    x   = drawselmon  (m, &dd, x        );
+          drawtitle   (m, &dd, x, tw, in);
 	drw_map(drw, m->barwin, 0, 0, m->ww, bh);
 }
 
