@@ -81,28 +81,40 @@ typedef struct {
 	const Arg arg;
 } Button;
 
-typedef struct {
-    unsigned int left;
-    unsigned int right;
-    unsigned int top;
-    unsigned int bottom;
-} BarVec4;
+typedef unsigned int BarPX;
+typedef int BarBool;
+typedef const char *BarStr;
 
 typedef struct {
-    unsigned int added_height;
+    BarPX left;
+    BarPX right;
+    BarPX top;
+    BarPX bottom;
+} BarLRTB;
+
+typedef struct {
+    BarPX left;
+    BarPX right;
+} BarLR;
+
+typedef struct {
+    BarPX vert;
+    BarPX horz;
+} BarVH;
+
+typedef struct {
+    BarPX added_height;
     struct {
-        int uniform_width;
+        BarBool uniform_width;
+        BarLR padding;
         struct {
-            unsigned int left;
-            unsigned int right;
-        } padding;
+            BarStr string;
+            BarLR padding;
+        } separator;
     } tags;
-    BarVec4 borders;
-    BarVec4 padding;
-    struct {
-        unsigned int vert;
-        unsigned int horz;
-    } gaps;
+    BarLRTB borders;
+    BarLRTB padding;
+    BarVH gaps;
 } BarCfg;
 
 typedef struct Monitor Monitor;
@@ -720,8 +732,9 @@ dirtomon(int dir)
 void
 drawbar(Monitor *m)
 {
+    BarStr tss;
 	int x, w, tw = 0;
-    int tpl, tpr, tuw, tmw, tuwpl;
+    BarPX tpl, tpr, tuw, tmw, tuwpl, tspl, tspr, tsw;
     int bl, br, bt, bb;
     int fx, fy, fw, fh;
 	int boxs = drw->fonts->h / 9;
@@ -780,6 +793,10 @@ drawbar(Monitor *m)
     tmw = 0;
     for (i = 0; i < LENGTH(tags); ++i)
         tws[i] = TEXTW(tags[i]);
+    tspl = barcfg.tags.separator.padding.left;
+    tspr = barcfg.tags.separator.padding.right;
+    tss  = barcfg.tags.separator.string;
+    tsw  = tspl + TEXTW(tss) + tspr;
 
     for (c = m->clients; c; c = c->next) {
         occ |= c->tags;
@@ -808,6 +825,12 @@ drawbar(Monitor *m)
                      m == selmon && selmon->sel && selmon->sel->tags & 1 << i,
                      urg & 1 << i);
         x += w;
+
+        if (i + 1 != LENGTH(tags)) {
+            drw_setscheme(drw, scheme[SchemeNorm]);
+            drw_text(drw, x, fy, tsw, fh, tspl, tss, 0);
+            x += tsw;
+        }
     }
 
     /* layout */
