@@ -775,6 +775,33 @@ typedef struct {
     int x, y, w, h;
 } BarDrawDims;
 
+int
+drawborders(BarDrawDims *dd)
+{
+    BarPX bl, br, bt, bb;
+
+    drw_setscheme(drw, scheme[SchemeBarBorder]);
+    if ((bl = barcfg.borders.left) != 0)
+        drw_rect(drw, dd->x, dd->y, bl, dd->h, 1, 0);
+    if ((br = barcfg.borders.right) != 0)
+        drw_rect(drw, dd->w - br, dd->y, br, dd->h, 1, 0);
+    if ((bt = barcfg.borders.top) != 0)
+        drw_rect(drw, dd->x, dd->y, dd->w, bt, 1, 0);
+    if ((bb = barcfg.borders.bottom) != 0)
+        drw_rect(drw, dd->x, dd->h - bb, dd->w, bb, 1, 0);
+    dd->x += bl;
+    dd->y += bt;
+    dd->w -= bl + br;
+    dd->h -= bt + bb;
+    return bl;
+}
+
+void
+drawgaps(BarDrawDims *dd)
+{
+    dd->w -= barcfg.gaps.horz * 2;
+}
+
 void
 drawbar(Monitor *m)
 {
@@ -784,7 +811,6 @@ drawbar(Monitor *m)
     BarPX lpl, lpr;
     BarPX spl, spr;
     BarPX trs;
-    int bl, br, bt, bb;
     BarDrawDims dd;
 	int boxs = drw->fonts->h / barcfg.indicator_box.pos_denom;
 	int boxw = drw->fonts->h / barcfg.indicator_box.width_denom + 2;
@@ -794,30 +820,14 @@ drawbar(Monitor *m)
 	if (!m->showbar)
 		return;
 
-    x  = 0;
+    x    = 0;
     dd.x = 0;
     dd.y = 0;
     dd.h = bh;
     dd.w = m->ww;
 
-    /* gaps */
-    dd.w -= barcfg.gaps.horz * 2;
-
-    /* borders */
-    drw_setscheme(drw, scheme[SchemeBarBorder]);
-    if ((bl = barcfg.borders.left) != 0)
-        drw_rect(drw, dd.x, dd.y, bl, dd.h, 1, 0);
-    if ((br = barcfg.borders.right) != 0)
-        drw_rect(drw, dd.w - barcfg.borders.right, dd.y, br, dd.h, 1, 0);
-    if ((bt = barcfg.borders.top) != 0)
-        drw_rect(drw, dd.x, dd.y, dd.w, bt, 1, 0);
-    if ((bb = barcfg.borders.bottom) != 0)
-        drw_rect(drw, dd.x, dd.h - barcfg.borders.bottom, dd.w, bb, 1, 0);
-    dd.x += bl;
-    dd.y += bt;
-    dd.w -= bl + br;
-    dd.h -= bt + bb;
-    x    += bl;
+    drawgaps(&dd);
+    x += drawborders(&dd);
 
     /* padding */
     drw_setscheme(drw, scheme[SchemeBarPadding]);
