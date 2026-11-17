@@ -72,6 +72,8 @@ enum {
     SchemeBarTagsSep,
     SchemeBarTagsNorm,
     SchemeBarTagsSel,
+    SchemeBarLayout,
+    SchemeBarSelmon,
 };
 
 typedef union {
@@ -123,6 +125,26 @@ typedef struct {
             BarLR padding;
         } separator;
     } tags;
+    struct {
+        BarBool show;
+        BarLR padding;
+    } layout;
+    struct {
+        BarBool show;
+        BarStr active;
+        BarStr inactive;
+        BarLR padding;
+    } selmon;
+    struct {
+        BarBool show;
+        BarLR padding;
+    } title;
+    struct {
+        BarPX tags;
+        BarPX layout;
+        BarPX selmon;
+        BarPX title;
+    } trailing_space;
     BarLRTB borders;
     BarLRTB padding;
     BarVH gaps;
@@ -743,9 +765,11 @@ dirtomon(int dir)
 void
 drawbar(Monitor *m)
 {
-    BarStr tss;
+    BarStr tss, ss;
 	int x, w, tw = 0;
     BarPX tpl, tpr, tuw, tmw, tuwpl, tspl, tspr, tsw;
+    BarPX lpl, lpr;
+    BarPX spl, spr;
     int bl, br, bt, bb;
     int fx, fy, fw, fh;
 	int boxs = drw->fonts->h / 9;
@@ -791,7 +815,7 @@ drawbar(Monitor *m)
     x  += barcfg.padding.left;
 
     /* status */
-	if (m == selmon || barcfg.status.all_mons) { /* status is only drawn on selected monitor */
+	if (m == selmon || barcfg.status.all_mons) {
 		drw_setscheme(drw, scheme[SchemeNorm]);
 		tw = TEXTW(stext);
 		drw_text(drw, fx + fw - tw, fy, tw, fh, 0, stext, 0);
@@ -844,10 +868,28 @@ drawbar(Monitor *m)
         }
     }
 
+    x += barcfg.trailing_space.tags;
+
     /* layout */
-	w = TEXTW(m->ltsymbol);
-	drw_setscheme(drw, scheme[SchemeNorm]);
-	x = drw_text(drw, x, fy, w, fh, 0, m->ltsymbol, 0);
+    if (barcfg.layout.show) {
+        drw_setscheme(drw, scheme[SchemeBarLayout]);
+        lpl = barcfg.layout.padding.left;
+        lpr = barcfg.layout.padding.right;
+        w = lpl + TEXTW(m->ltsymbol) + lpr;
+        x = drw_text(drw, x, fy, w, fh, lpl, m->ltsymbol, 0);
+        x += barcfg.trailing_space.layout;
+    }
+
+    /* selmon */
+    if (barcfg.selmon.show) {
+        drw_setscheme(drw, scheme[SchemeBarSelmon]);
+        spl = barcfg.selmon.padding.left;
+        spr = barcfg.selmon.padding.right;
+        ss  = m == selmon ? barcfg.selmon.active : barcfg.selmon.inactive;
+        w = spl + TEXTW(ss) + spr;
+        x = drw_text(drw, x, fy, w, fh, spl, ss, 0);
+        x += barcfg.trailing_space.selmon;
+    }
 
     /* selected window title */
 	if ((w = fx + fw - tw - x) > fh) {
