@@ -58,13 +58,21 @@
 
 /* enums */
 enum { CurNormal, CurResize, CurMove, CurLast }; /* cursor */
-enum { SchemeNorm, SchemeSel }; /* color schemes */
 enum { NetSupported, NetWMName, NetWMState, NetWMCheck,
        NetWMFullscreen, NetActiveWindow, NetWMWindowType,
        NetWMWindowTypeDialog, NetClientList, NetLast }; /* EWMH atoms */
 enum { WMProtocols, WMDelete, WMState, WMTakeFocus, WMLast }; /* default atoms */
 enum { ClkTagBar, ClkLtSymbol, ClkStatusText, ClkWinTitle,
        ClkClientWin, ClkRootWin, ClkLast }; /* clicks */
+enum {
+    SchemeNorm,
+    SchemeSel,
+    SchemeBarBorder,
+    SchemeBarPadding,
+    SchemeBarTagsSep,
+    SchemeBarTagsNorm,
+    SchemeBarTagsSel,
+};
 
 typedef union {
 	int i;
@@ -755,7 +763,7 @@ drawbar(Monitor *m)
     fw -= barcfg.gaps.horz * 2;
 
     /* borders */
-    drw_setscheme(drw, scheme[SchemeNorm]);
+    drw_setscheme(drw, scheme[SchemeBarBorder]);
     if ((bl = barcfg.borders.left) != 0)
         drw_rect(drw, fx, fy, bl, fh, 1, 0);
     if ((br = barcfg.borders.right) != 0)
@@ -771,15 +779,15 @@ drawbar(Monitor *m)
     x  += bl;
 
     /* padding */
-    drw_setscheme(drw, scheme[SchemeNorm]);
-    drw_rect(drw, fx, fy, fw, fh, 1, 1);
+    drw_setscheme(drw, scheme[SchemeBarPadding]);
+    drw_rect(drw, fx, fy, fw, fh, 1, 0);
     fx += barcfg.padding.left;
     fy += barcfg.padding.top;
     fh -= barcfg.padding.top + barcfg.padding.bottom;
     fw -= barcfg.padding.left + barcfg.padding.right;
     x  += barcfg.padding.left;
 
-	/* draw status first so it can be overdrawn by tags later */
+    /* status */
 	if (m == selmon) { /* status is only drawn on selected monitor */
 		drw_setscheme(drw, scheme[SchemeNorm]);
 		tw = TEXTW(stext);
@@ -818,7 +826,7 @@ drawbar(Monitor *m)
             w = tws[i];
         }
         w += tpl + tpr;
-        drw_setscheme(drw, scheme[m->tagset[m->seltags] & 1 << i ? SchemeSel : SchemeNorm]);
+        drw_setscheme(drw, scheme[m->tagset[m->seltags] & 1 << i ? SchemeBarTagsSel : SchemeBarTagsNorm]);
         drw_text(drw, x, fy, w, fh, tpl + tuwpl, tags[i], urg & 1 << i);
         if (occ & 1 << i)
             drw_rect(drw, x + boxs, fy + boxs, boxw, boxw,
@@ -827,7 +835,7 @@ drawbar(Monitor *m)
         x += w;
 
         if (i + 1 != LENGTH(tags)) {
-            drw_setscheme(drw, scheme[SchemeNorm]);
+            drw_setscheme(drw, scheme[SchemeBarTagsSep]);
             drw_text(drw, x, fy, tsw, fh, tspl, tss, 0);
             x += tsw;
         }
