@@ -74,6 +74,10 @@ enum {
     SchemeBarTagsSel,
     SchemeBarLayout,
     SchemeBarSelmon,
+    SchemeBarTitleNorm,
+    SchemeBarTitleSel,
+    SchemeBarTitleNone,
+    SchemeBarStatus,
 };
 
 typedef union {
@@ -116,6 +120,7 @@ typedef struct {
     BarPX added_height;
     struct {
         BarBool all_mons;
+        BarLR padding;
     } status;
     struct {
         BarBool uniform_width;
@@ -137,7 +142,7 @@ typedef struct {
     } selmon;
     struct {
         BarBool show;
-        BarLR padding;
+        BarPX left_padding;
     } title;
     struct {
         BarPX tags;
@@ -816,9 +821,9 @@ drawbar(Monitor *m)
 
     /* status */
 	if (m == selmon || barcfg.status.all_mons) {
-		drw_setscheme(drw, scheme[SchemeNorm]);
-		tw = TEXTW(stext);
-		drw_text(drw, fx + fw - tw, fy, tw, fh, 0, stext, 0);
+		drw_setscheme(drw, scheme[SchemeBarStatus]);
+		tw = TEXTW(stext) + barcfg.status.padding.left + barcfg.status.padding.right;
+		drw_text(drw, fx + fw - tw, fy, tw, fh, barcfg.status.padding.left, stext, 0);
 	}
     
     /* tagset */
@@ -891,15 +896,15 @@ drawbar(Monitor *m)
         x += barcfg.trailing_space.selmon;
     }
 
-    /* selected window title */
-	if ((w = fx + fw - tw - x) > fh) {
+    /* title */
+	if (barcfg.title.show && (w = fx + fw - tw - x - barcfg.trailing_space.title) > fh) {
 		if (m->sel) {
-			drw_setscheme(drw, scheme[m == selmon ? SchemeSel : SchemeNorm]);
-			drw_text(drw, x, fy, w, fh, 0, m->sel->name, 0);
+			drw_setscheme(drw, scheme[m == selmon ? SchemeBarTitleSel : SchemeBarTitleNorm]);
+			drw_text(drw, x, fy, w, fh, barcfg.title.left_padding, m->sel->name, 0);
 			if (m->sel->isfloating)
 				drw_rect(drw, x + boxs, boxs, boxw, boxw, m->sel->isfixed, 0);
 		} else {
-			drw_setscheme(drw, scheme[SchemeNorm]);
+			drw_setscheme(drw, scheme[SchemeBarTitleNone]);
 			drw_rect(drw, x, fy, w, fh, 1, 1);
 		}
 	}
