@@ -592,7 +592,7 @@ configurenotify(XEvent *e)
 				for (c = m->clients; c; c = c->next)
 					if (c->isfullscreen)
 						resizeclient(c, m->mx, m->my, m->mw, m->mh);
-				XMoveResizeWindow(dpy, m->barwin, m->wx, m->by, m->ww, bh);
+				XMoveResizeWindow(dpy, m->barwin, m->wx + barcfg.gaps.horz, m->by + m->topbar * barcfg.gaps.vert, m->ww - barcfg.gaps.horz * 2, bh);
 			}
 			focus(NULL);
 			arrange(NULL);
@@ -734,9 +734,12 @@ drawbar(Monitor *m)
 
     x  = 0;
     fx = 0;
-    fy = m->by;
+    fy = 0;
     fh = bh;
     fw = m->ww;
+
+    /* gaps */
+    fw -= barcfg.gaps.horz * 2;
 
     /* borders */
     drw_setscheme(drw, scheme[SchemeNorm]);
@@ -1801,7 +1804,7 @@ togglebar(const Arg *arg)
 {
 	selmon->showbar = !selmon->showbar;
 	updatebarpos(selmon);
-	XMoveResizeWindow(dpy, selmon->barwin, selmon->wx, selmon->by, selmon->ww, bh);
+	XMoveResizeWindow(dpy, selmon->barwin, selmon->wx + barcfg.gaps.horz, selmon->by + selmon->topbar * barcfg.gaps.vert, selmon->ww - barcfg.gaps.horz * 2, bh);
 	arrange(selmon);
 }
 
@@ -1912,7 +1915,7 @@ updatebars(void)
 	for (m = mons; m; m = m->next) {
 		if (m->barwin)
 			continue;
-		m->barwin = XCreateWindow(dpy, root, m->wx, m->by, m->ww, bh, 0, DefaultDepth(dpy, screen),
+		m->barwin = XCreateWindow(dpy, root, m->wx + barcfg.gaps.horz, m->by + m->topbar * barcfg.gaps.vert, m->ww - barcfg.gaps.horz * 2, bh, 0, DefaultDepth(dpy, screen),
 				CopyFromParent, DefaultVisual(dpy, screen),
 				CWOverrideRedirect|CWBackPixmap|CWEventMask, &wa);
 		XDefineCursor(dpy, m->barwin, cursor[CurNormal]->cursor);
@@ -1927,11 +1930,11 @@ updatebarpos(Monitor *m)
 	m->wy = m->my;
 	m->wh = m->mh;
 	if (m->showbar) {
-		m->wh -= bh;
+		m->wh -= bh + barcfg.gaps.vert;
 		m->by = m->topbar ? m->wy : m->wy + m->wh;
-		m->wy = m->topbar ? m->wy + bh : m->wy;
+		m->wy = m->topbar ? m->wy + bh + barcfg.gaps.vert : m->wy;
 	} else
-		m->by = -bh;
+		m->by = - bh - barcfg.gaps.vert;
 }
 
 void
