@@ -313,7 +313,7 @@ static void zoom(const Arg *arg);
 
 /* variables */
 static const char broken[] = "broken";
-static char stext[256];
+static char stext[1024];
 static int screen;
 static int sw, sh;           /* X display screen geometry width, height */
 static int bh;               /* bar height */
@@ -562,7 +562,7 @@ cleanup(void)
 		cleanupmon(mons);
 	for (i = 0; i < CurLast; i++)
 		drw_cur_free(drw, cursor[i]);
-	for (i = 0; i < LENGTH(colors); i++)
+	for (i = 0; i < LENGTH(colors) + 1; i++)
 		drw_scm_free(drw, scheme[i], 3);
 	free(scheme);
 	XDestroyWindow(dpy, wmcheckwin);
@@ -771,6 +771,10 @@ dirtomon(int dir)
 	return m;
 }
 
+typedef struct {
+    int x, y, w, h;
+} BarDrawDims;
+
 void
 drawbar(Monitor *m)
 {
@@ -781,7 +785,7 @@ drawbar(Monitor *m)
     BarPX spl, spr;
     BarPX trs;
     int bl, br, bt, bb;
-    int fx, fy, fw, fh;
+    BarDrawDims dd;
 	int boxs = drw->fonts->h / barcfg.indicator_box.pos_denom;
 	int boxw = drw->fonts->h / barcfg.indicator_box.width_denom + 2;
 	unsigned int i, occ = 0, urg = 0, tws[LENGTH(tags)];
@@ -791,44 +795,44 @@ drawbar(Monitor *m)
 		return;
 
     x  = 0;
-    fx = 0;
-    fy = 0;
-    fh = bh;
-    fw = m->ww;
+    dd.x = 0;
+    dd.y = 0;
+    dd.h = bh;
+    dd.w = m->ww;
 
     /* gaps */
-    fw -= barcfg.gaps.horz * 2;
+    dd.w -= barcfg.gaps.horz * 2;
 
     /* borders */
     drw_setscheme(drw, scheme[SchemeBarBorder]);
     if ((bl = barcfg.borders.left) != 0)
-        drw_rect(drw, fx, fy, bl, fh, 1, 0);
+        drw_rect(drw, dd.x, dd.y, bl, dd.h, 1, 0);
     if ((br = barcfg.borders.right) != 0)
-        drw_rect(drw, fw - barcfg.borders.right, fy, br, fh, 1, 0);
+        drw_rect(drw, dd.w - barcfg.borders.right, dd.y, br, dd.h, 1, 0);
     if ((bt = barcfg.borders.top) != 0)
-        drw_rect(drw, fx, fy, fw, bt, 1, 0);
+        drw_rect(drw, dd.x, dd.y, dd.w, bt, 1, 0);
     if ((bb = barcfg.borders.bottom) != 0)
-        drw_rect(drw, fx, fh - barcfg.borders.bottom, fw, bb, 1, 0);
-    fx += bl;
-    fy += bt;
-    fw -= bl + br;
-    fh -= bt + bb;
-    x  += bl;
+        drw_rect(drw, dd.x, dd.h - barcfg.borders.bottom, dd.w, bb, 1, 0);
+    dd.x += bl;
+    dd.y += bt;
+    dd.w -= bl + br;
+    dd.h -= bt + bb;
+    x    += bl;
 
     /* padding */
     drw_setscheme(drw, scheme[SchemeBarPadding]);
-    drw_rect(drw, fx, fy, fw, fh, 1, 0);
-    fx += barcfg.padding.left;
-    fy += barcfg.padding.top;
-    fh -= barcfg.padding.top + barcfg.padding.bottom;
-    fw -= barcfg.padding.left + barcfg.padding.right;
+    drw_rect(drw, dd.x, dd.y, dd.w, dd.h, 1, 0);
+    dd.x += barcfg.padding.left;
+    dd.y += barcfg.padding.top;
+    dd.h -= barcfg.padding.top + barcfg.padding.bottom;
+    dd.w -= barcfg.padding.left + barcfg.padding.right;
     x  += barcfg.padding.left;
 
     /* status */
 	if (m == selmon || barcfg.status.all_mons) {
 		drw_setscheme(drw, scheme[SchemeBarStatus]);
 		tw = TEXTW(stext) + barcfg.status.padding.left + barcfg.status.padding.right;
-		drw_text(drw, fx + fw - tw, fy, tw, fh, barcfg.status.padding.left, stext, 0);
+		drw_text(drw, dd.x + dd.w - tw, dd.y, tw, dd.h, barcfg.status.padding.left, stext, 0);
 	}
     
     /* tagset */
@@ -864,16 +868,16 @@ drawbar(Monitor *m)
         }
         w += tpl + tpr;
         drw_setscheme(drw, scheme[m->tagset[m->seltags] & 1 << i ? SchemeBarTagsSel : SchemeBarTagsNorm]);
-        drw_text(drw, x, fy, w, fh, tpl + tuwpl, tags[i], urg & 1 << i);
+        drw_text(drw, x, dd.y, w, dd.h, tpl + tuwpl, tags[i], urg & 1 << i);
         if (occ & 1 << i)
-            drw_rect(drw, x + boxs, fy + boxs, boxw, boxw,
+            drw_rect(drw, x + boxs, dd.y + boxs, boxw, boxw,
                      m == selmon && selmon->sel && selmon->sel->tags & 1 << i,
                      urg & 1 << i);
         x += w;
 
         if (i + 1 != LENGTH(tags)) {
             drw_setscheme(drw, scheme[SchemeBarTagsSep]);
-            drw_text(drw, x, fy, tsw, fh, tspl, tss, 0);
+            drw_text(drw, x, dd.y, tsw, dd.h, tspl, tss, 0);
             x += tsw;
         }
     }
@@ -881,7 +885,7 @@ drawbar(Monitor *m)
     trs = barcfg.trailing_space.tags;
     if (trs != 0) {
         drw_setscheme(drw, scheme[SchemeBarPadding]);
-        drw_rect(drw, x, fy, trs, fh, 1, 0);
+        drw_rect(drw, x, dd.y, trs, dd.h, 1, 0);
         x += trs;
     }
 
@@ -891,12 +895,12 @@ drawbar(Monitor *m)
         lpl = barcfg.layout.padding.left;
         lpr = barcfg.layout.padding.right;
         w = lpl + TEXTW(m->ltsymbol) + lpr;
-        x = drw_text(drw, x, fy, w, fh, lpl, m->ltsymbol, 0);
+        x = drw_text(drw, x, dd.y, w, dd.h, lpl, m->ltsymbol, 0);
 
         trs = barcfg.trailing_space.layout;
         if (trs != 0) {
             drw_setscheme(drw, scheme[SchemeBarPadding]);
-            drw_rect(drw, x, fy, trs, fh, 1, 0);
+            drw_rect(drw, x, dd.y, trs, dd.h, 1, 0);
             x += trs;
         }
     }
@@ -908,32 +912,32 @@ drawbar(Monitor *m)
         spr = barcfg.selmon.padding.right;
         ss  = m == selmon ? barcfg.selmon.active : barcfg.selmon.inactive;
         w = spl + TEXTW(ss) + spr;
-        x = drw_text(drw, x, fy, w, fh, spl, ss, 0);
+        x = drw_text(drw, x, dd.y, w, dd.h, spl, ss, 0);
 
         trs = barcfg.trailing_space.selmon;
         if (trs != 0) {
             drw_setscheme(drw, scheme[SchemeBarPadding]);
-            drw_rect(drw, x, fy, trs, fh, 1, 0);
+            drw_rect(drw, x, dd.y, trs, dd.h, 1, 0);
             x += trs;
         }
     }
 
     /* title */
-	if (barcfg.title.show && (w = fx + fw - tw - x - barcfg.trailing_space.title) > fh) {
+	if (barcfg.title.show && (w = dd.x + dd.w - tw - x - barcfg.trailing_space.title) > dd.h) {
 		if (m->sel) {
 			drw_setscheme(drw, scheme[m == selmon ? SchemeBarTitleSel : SchemeBarTitleNorm]);
-			drw_text(drw, x, fy, w, fh, barcfg.title.left_padding, m->sel->name, 0);
+			drw_text(drw, x, dd.y, w, dd.h, barcfg.title.left_padding, m->sel->name, 0);
 			if (m->sel->isfloating)
 				drw_rect(drw, x + boxs, boxs, boxw, boxw, m->sel->isfixed, 0);
 		} else {
 			drw_setscheme(drw, scheme[SchemeBarTitleNone]);
-			drw_rect(drw, x, fy, w, fh, 1, 1);
+			drw_rect(drw, x, dd.y, w, dd.h, 1, 1);
 		}
 
         trs = barcfg.trailing_space.title;
         if (trs != 0) {
             drw_setscheme(drw, scheme[SchemeBarPadding]);
-            drw_rect(drw, x + w, fy, trs, fh, 1, 0);
+            drw_rect(drw, x + w, dd.y, trs, dd.h, 1, 0);
             x += trs;
         }
 	}
@@ -1781,7 +1785,8 @@ setup(void)
 	cursor[CurResize] = drw_cur_create(drw, XC_sizing);
 	cursor[CurMove] = drw_cur_create(drw, XC_fleur);
 	/* init appearance */
-	scheme = ecalloc(LENGTH(colors), sizeof(Clr *));
+	scheme = ecalloc(LENGTH(colors) + 1, sizeof(Clr *));
+    scheme[LENGTH(colors)] = drw_scm_create(drw, colors[0], 3);
 	for (i = 0; i < LENGTH(colors); i++)
 		scheme[i] = drw_scm_create(drw, colors[i], 3);
 	/* init bars */
