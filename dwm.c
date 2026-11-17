@@ -150,6 +150,10 @@ typedef struct {
         BarPX selmon;
         BarPX title;
     } trailing_space;
+    struct {
+        BarPX width_denom;
+        BarPX pos_denom;
+    } indicator_box;
     BarLRTB borders;
     BarLRTB padding;
     BarVH gaps;
@@ -775,10 +779,11 @@ drawbar(Monitor *m)
     BarPX tpl, tpr, tuw, tmw, tuwpl, tspl, tspr, tsw;
     BarPX lpl, lpr;
     BarPX spl, spr;
+    BarPX trs;
     int bl, br, bt, bb;
     int fx, fy, fw, fh;
-	int boxs = drw->fonts->h / 9;
-	int boxw = drw->fonts->h / 6 + 2;
+	int boxs = drw->fonts->h / barcfg.indicator_box.pos_denom;
+	int boxw = drw->fonts->h / barcfg.indicator_box.width_denom + 2;
 	unsigned int i, occ = 0, urg = 0, tws[LENGTH(tags)];
 	Client *c;
 
@@ -873,7 +878,12 @@ drawbar(Monitor *m)
         }
     }
 
-    x += barcfg.trailing_space.tags;
+    trs = barcfg.trailing_space.tags;
+    if (trs != 0) {
+        drw_setscheme(drw, scheme[SchemeBarPadding]);
+        drw_rect(drw, x, fy, trs, fh, 1, 0);
+        x += trs;
+    }
 
     /* layout */
     if (barcfg.layout.show) {
@@ -882,7 +892,13 @@ drawbar(Monitor *m)
         lpr = barcfg.layout.padding.right;
         w = lpl + TEXTW(m->ltsymbol) + lpr;
         x = drw_text(drw, x, fy, w, fh, lpl, m->ltsymbol, 0);
-        x += barcfg.trailing_space.layout;
+
+        trs = barcfg.trailing_space.layout;
+        if (trs != 0) {
+            drw_setscheme(drw, scheme[SchemeBarPadding]);
+            drw_rect(drw, x, fy, trs, fh, 1, 0);
+            x += trs;
+        }
     }
 
     /* selmon */
@@ -893,7 +909,13 @@ drawbar(Monitor *m)
         ss  = m == selmon ? barcfg.selmon.active : barcfg.selmon.inactive;
         w = spl + TEXTW(ss) + spr;
         x = drw_text(drw, x, fy, w, fh, spl, ss, 0);
-        x += barcfg.trailing_space.selmon;
+
+        trs = barcfg.trailing_space.selmon;
+        if (trs != 0) {
+            drw_setscheme(drw, scheme[SchemeBarPadding]);
+            drw_rect(drw, x, fy, trs, fh, 1, 0);
+            x += trs;
+        }
     }
 
     /* title */
@@ -907,6 +929,13 @@ drawbar(Monitor *m)
 			drw_setscheme(drw, scheme[SchemeBarTitleNone]);
 			drw_rect(drw, x, fy, w, fh, 1, 1);
 		}
+
+        trs = barcfg.trailing_space.title;
+        if (trs != 0) {
+            drw_setscheme(drw, scheme[SchemeBarPadding]);
+            drw_rect(drw, x + w, fy, trs, fh, 1, 0);
+            x += trs;
+        }
 	}
 	drw_map(drw, m->barwin, 0, 0, m->ww, bh);
 }
