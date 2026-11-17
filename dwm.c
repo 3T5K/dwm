@@ -833,12 +833,41 @@ drawgaps(BarDrawDims *dd)
 int
 drawstatus(Monitor *m, BarDrawDims *dd)
 {
-    int tw = 0;
-	if (m == selmon || barcfg.status.all_mons) {
-		drw_setscheme(drw, scheme[SchemeBarStatus]);
-		tw = TEXTW(stext) + barcfg.status.padding.left + barcfg.status.padding.right;
-		drw_text(drw, dd->x + dd->w - tw, dd->y, tw, dd->h, barcfg.status.padding.left, stext, 0);
-	}
+    int tw = 0, cmd, col;
+    char *buf;
+
+    size_t stlen, rlen, i;
+
+    if (barcfg.status.all_mons && m != selmon)
+        return tw;
+
+    stlen = strlen(stext);
+    buf = ecalloc(stlen + 1, 1);
+    for (rlen = cmd = i = 0; i < stlen; ++i) {
+        if (cmd) {
+            if (stext[i] == 'f' || stext[i] == 'b') {
+                col = 1; cmd = 0;
+                continue;
+            }
+
+            if (stext[i] == '|' || stext[i] == '^') {
+                cmd = 0;
+                continue;
+            }
+
+            die("todo: bad command");
+        }
+
+        if (col) {
+        }
+
+        if ((cmd = (stext[i] == '^')))
+            continue;
+    }
+
+    drw_setscheme(drw, scheme[SchemeBarStatus]);
+    tw = TEXTW(stext) + barcfg.status.padding.left + barcfg.status.padding.right;
+    drw_text(drw, dd->x + dd->w - tw, dd->y, tw, dd->h, barcfg.status.padding.left, stext, 0);
 
     return tw;
 }
