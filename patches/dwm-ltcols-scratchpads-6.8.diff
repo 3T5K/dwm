@@ -1,0 +1,81 @@
+diff --git a/config.def.h b/config.def.h
+index 0b83f1e..47ed029 100644
+--- a/config.def.h
++++ b/config.def.h
+@@ -16,6 +16,7 @@ static const char *colors[][3]      = {
+ 	/*               fg         bg         border   */
+ 	[SchemeNorm] = { col_gray3, col_gray1, col_gray2 },
+ 	[SchemeSel]  = { col_gray4, col_cyan,  col_cyan  },
++    [SchemeSpad] = { col_cyan, col_gray2, "#000000" },
+ };
+ 
+ static const int sp_exclusive_across_mons = 1;
+diff --git a/dwm.c b/dwm.c
+index e197aae..d805173 100644
+--- a/dwm.c
++++ b/dwm.c
+@@ -71,7 +71,7 @@
+ 
+ /* enums */
+ enum { CurNormal, CurResize, CurMove, CurLast }; /* cursor */
+-enum { SchemeNorm, SchemeSel }; /* color schemes */
++enum { SchemeNorm, SchemeSel, SchemeSpad }; /* color schemes */
+ enum { NetSupported, NetWMName, NetWMState, NetWMCheck,
+        NetWMFullscreen, NetActiveWindow, NetWMWindowType,
+        NetWMWindowTypeDialog, NetClientList, NetWMPid, NetLast }; /* EWMH atoms */
+@@ -262,11 +262,13 @@ static void grabkeys(void);
+ static void incnmaster(const Arg *arg);
+ static void keypress(XEvent *e);
+ static void killclient(const Arg *arg);
++static int ltcols_match_spad(Client *c);
+ static int ltcols_override(Client *c, int ev);
+ static void ltcols_map_paint(void (*paint)(Client *, int), Monitor *m, int ev);
+ static Client *ltcols_nextvis(Client *c);
+ static void ltcols_paint(Client *c, int ev);
+ static void ltcols_paint_default(Client *c, int ev);
++static void ltcols_paint_spad(Client *c, int ev);
+ static void ltcols_paint_template(Client *c, int ev, LtColsIdx ac, LtColsIdx in);
+ static void ltcols_try_paint(Client *c, unsigned long col);
+ static void manage(Window w, XWindowAttributes *wa);
+@@ -369,7 +371,9 @@ static Display *dpy;
+ static Drw *drw;
+ static Monitor *mons, *selmon;
+ static Window root, wmcheckwin;
+-static LtColsOverride ltcols_overrides[] = { { 0 } };
++static LtColsOverride ltcols_overrides[] = {
++    { .match = ltcols_match_spad, .paint = ltcols_paint_spad },
++};
+ static LtColsPair ltcols_map[] = { { 0 } };
+ 
+ /* configuration, allows nested code to access above variables */
+@@ -1141,6 +1145,12 @@ killclient(const Arg *arg)
+ 	}
+ }
+ 
++int
++ltcols_match_spad(Client *c)
++{
++    return c && SP_ISSPAD(c);
++}
++
+ int
+ ltcols_override(Client *c, int ev)
+ {
+@@ -1209,6 +1219,17 @@ ltcols_paint_default(Client *c, int ev)
+     ltcols_paint_template(c, ev, ac, in);
+ }
+ 
++void
++ltcols_paint_spad(Client *c, int ev)
++{
++    if (ev == LtColsEvUnfocus && !sp_repaint)
++        return;
++
++    LtColsIdx ac = { SchemeSpad, ColFg };
++    LtColsIdx in = { SchemeSpad, ColBg };
++    ltcols_paint_template(c, ev, ac, in);
++}
++
+ void
+ ltcols_paint_template(Client *c, int ev, LtColsIdx ac, LtColsIdx in)
+ {
