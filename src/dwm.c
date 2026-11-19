@@ -81,7 +81,8 @@ enum { CurNormal, CurResize, CurMove, CurLast }; /* cursor */
 enum { LtTile, LtFloat, LtMonocle }; /* layouts */
 enum { SchemeNorm, SchemeSel, SchemeStatus, SchemeTagsSel, SchemeTagsNorm,
     SchemeInfoSel, SchemeInfoNorm, SchemeTileMasterExp, SchemeTileMasterCol,
-    SchemeTileStackExp, SchemeTileStackCol, SchemeMonocle, SchemeSpad }; /* color schemes */
+    SchemeTileStackExp, SchemeTileStackCol, SchemeMonocle, SchemeSpad,
+    SchemeFloatLt }; /* color schemes */
 enum { NetSupported, NetWMName, NetWMState, NetWMCheck,
        NetWMFullscreen, NetActiveWindow, NetWMWindowType,
        NetWMWindowTypeDialog, NetClientList, NetWMPid, NetLast }; /* EWMH atoms */
@@ -421,6 +422,7 @@ static void ltcols_paint_monocle(Client *c, int ev);
 static void ltcols_paint_template(Client *c, int ev, LtColsIdx ac, LtColsIdx in);
 static void ltcols_paint_tile(Client *c, int ev);
 static void ltcols_paint_spad(Client *c, int ev);
+static void ltcols_paint_floatlt(Client *c, int ev);
 static void ltcols_try_paint(Client *c, unsigned long col);
 static void manage(Window w, XWindowAttributes *wa);
 static void mappingnotify(XEvent *e);
@@ -728,7 +730,7 @@ arrangemon(Monitor *m)
     else {
         for (c = nexttiled(m->clients); c; c = nexttiled(c->next))
             xraycfg(c, XrayGrpNone, -1);
-        ltcols_map_paint(NULL, m, LtColsEvLayout);
+        ltcols_map_paint(ltcols_paint_floatlt, m, LtColsEvLayout);
     }
 }
 
@@ -1813,6 +1815,14 @@ ltcols_paint_spad(Client *c, int ev)
 
     LtColsIdx ac = { SchemeSpad, ColFg };
     LtColsIdx in = { SchemeSpad, ColBg };
+    ltcols_paint_template(c, ev, ac, in);
+}
+
+void
+ltcols_paint_floatlt(Client *c, int ev)
+{
+    LtColsIdx ac = { SchemeFloatLt, ColFg };
+    LtColsIdx in = { SchemeFloatLt, ColBg };
     ltcols_paint_template(c, ev, ac, in);
 }
 
