@@ -44,31 +44,31 @@
 
 static const char *colors[][3] =
 {
-	[SchemeNorm         ] = { COL_NIL
+    [SchemeNorm         ] = { COL_NIL
                             , COL_NIL
                             , COL_NIL
                             },
-	[SchemeSel          ] = { COL_NIL
+    [SchemeSel          ] = { COL_NIL
                             , COL_NIL
                             , COL_NIL
                             },
-	[SchemeStatus       ] = { COL_STATUSBAR_TEXT
+    [SchemeStatus       ] = { COL_STATUSBAR_TEXT
                             , COL_STATUSBAR_BG
                             , COL_NIL
                             },
-	[SchemeTagsSel      ] = { COL_TAGBAR_ACTIVE_TEXT
+    [SchemeTagsSel      ] = { COL_TAGBAR_ACTIVE_TEXT
                             , COL_TAGBAR_ACTIVE_BG
                             , COL_NIL
                             },
-	[SchemeTagsNorm     ] = { COL_TAGBAR_NORMAL_TEXT
+    [SchemeTagsNorm     ] = { COL_TAGBAR_NORMAL_TEXT
                             , COL_TAGBAR_NORMAL_BG
                             , COL_NIL
                             },
-	[SchemeInfoSel      ] = { COL_INFOBAR_ACTIVE_TEXT
+    [SchemeInfoSel      ] = { COL_INFOBAR_ACTIVE_TEXT
                             , COL_INFOBAR_ACTIVE_BG
                             , COL_NIL
                             },
-	[SchemeInfoNorm     ] = { COL_INFOBAR_NORMAL_TEXT
+    [SchemeInfoNorm     ] = { COL_INFOBAR_NORMAL_TEXT
                             , COL_INFOBAR_NORMAL_BG
                             , COL_NIL
                             },
