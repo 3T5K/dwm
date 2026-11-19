@@ -29,6 +29,10 @@ static const char *colors[][3]      = {
 	[SchemeTagsNorm]  = { col_gray3, col_gray1,  "#000000"  }, // Tagbar left unselected {text,background,not used but cannot be empty}
 	[SchemeInfoSel]  = { col_gray4, col_cyan,  "#000000"  }, // infobar middle  selected {text,background,not used but cannot be empty}
 	[SchemeInfoNorm]  = { col_gray3, col_gray1,  "#000000"  }, // infobar middle  unselected {text,background,not used but cannot be empty}
+    [SchemeTileMasterExp] = { col_cyan, col_gray2, "#000000" },
+    [SchemeTileMasterCol] = { col_cyan, col_gray2, "#000000" },
+    [SchemeTileStackExp] = { col_cyan, col_gray2, "#000000" },
+    [SchemeTileStackCol] = { col_cyan, col_gray2, "#000000" },
 };
 
 static const int sp_exclusive_across_mons = 1;
