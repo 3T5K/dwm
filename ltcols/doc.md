@@ -11,6 +11,14 @@ separately.
 git diff 6.8..ltcols-6.8 > dwm-ltcols-6.8.diff
 ```
 
+### noborderflicker-ltcols-6.8
+
+**Dependencies:**
+- ltcols-6.8
+```sh
+git diff ltcols-6.8..noborderflicker-ltcols-6.8 > dwm-noborderflicker-ltcols-6.8.diff
+```
+
 ### ltcols-floatlt-6.8
 
 **Dependencies:**
