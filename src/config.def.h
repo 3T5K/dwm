@@ -34,6 +34,7 @@ static const char *colors[][3]      = {
     [SchemeTileStackExp] = { col_cyan, col_gray2, "#000000" },
     [SchemeTileStackCol] = { col_cyan, col_gray2, "#000000" },
     [SchemeMonocle] = { col_cyan, col_gray2, "#000000" },
+    [SchemeSpad] = { col_cyan, col_gray2, "#000000" },
 };
 
 static const int sp_exclusive_across_mons = 1;

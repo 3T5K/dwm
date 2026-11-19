@@ -81,7 +81,7 @@ enum { CurNormal, CurResize, CurMove, CurLast }; /* cursor */
 enum { LtTile, LtFloat, LtMonocle }; /* layouts */
 enum { SchemeNorm, SchemeSel, SchemeStatus, SchemeTagsSel, SchemeTagsNorm,
     SchemeInfoSel, SchemeInfoNorm, SchemeTileMasterExp, SchemeTileMasterCol,
-    SchemeTileStackExp, SchemeTileStackCol, SchemeMonocle }; /* color schemes */
+    SchemeTileStackExp, SchemeTileStackCol, SchemeMonocle, SchemeSpad }; /* color schemes */
 enum { NetSupported, NetWMName, NetWMState, NetWMCheck,
        NetWMFullscreen, NetActiveWindow, NetWMWindowType,
        NetWMWindowTypeDialog, NetClientList, NetWMPid, NetLast }; /* EWMH atoms */
@@ -411,6 +411,7 @@ static void grabkeys(void);
 static void incnmaster(const Arg *arg);
 static void keypress(XEvent *e);
 static void killclient(const Arg *arg);
+static int ltcols_match_spad(Client *c);
 static int ltcols_override(Client *c, int ev);
 static void ltcols_map_paint(void (*paint)(Client *, int), Monitor *m, int ev);
 static Client *ltcols_nextvis(Client *c);
@@ -419,6 +420,7 @@ static void ltcols_paint_default(Client *c, int ev);
 static void ltcols_paint_monocle(Client *c, int ev);
 static void ltcols_paint_template(Client *c, int ev, LtColsIdx ac, LtColsIdx in);
 static void ltcols_paint_tile(Client *c, int ev);
+static void ltcols_paint_spad(Client *c, int ev);
 static void ltcols_try_paint(Client *c, unsigned long col);
 static void manage(Window w, XWindowAttributes *wa);
 static void mappingnotify(XEvent *e);
@@ -555,7 +557,9 @@ static Display *dpy;
 static Drw *drw;
 static Monitor *mons, *selmon;
 static Window root, wmcheckwin;
-static LtColsOverride ltcols_overrides[] = { { 0 } };
+static LtColsOverride ltcols_overrides[] = {
+    { .match = ltcols_match_spad, .paint = ltcols_paint_spad },
+};
 static LtColsPair ltcols_map[] = {
     { .arrange = tile,    .paint = ltcols_paint_tile    },
     { .arrange = monocle, .paint = ltcols_paint_monocle },
@@ -1720,6 +1724,12 @@ killclient(const Arg *arg)
 }
 
 int
+ltcols_match_spad(Client *c)
+{
+    return c && SP_ISSPAD(c);
+}
+
+int
 ltcols_override(Client *c, int ev)
 {
     int i;
@@ -1792,6 +1802,17 @@ ltcols_paint_monocle(Client *c, int ev)
 {
     LtColsIdx ac = { SchemeMonocle, ColFg };
     LtColsIdx in = { SchemeMonocle, ColBg };
+    ltcols_paint_template(c, ev, ac, in);
+}
+
+void
+ltcols_paint_spad(Client *c, int ev)
+{
+    if (ev == LtColsEvUnfocus && !sp_repaint)
+        return;
+
+    LtColsIdx ac = { SchemeSpad, ColFg };
+    LtColsIdx in = { SchemeSpad, ColBg };
     ltcols_paint_template(c, ev, ac, in);
 }
 
