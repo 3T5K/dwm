@@ -82,7 +82,7 @@ enum { LtTile, LtFloat, LtMonocle }; /* layouts */
 enum { SchemeNorm, SchemeSel, SchemeStatus, SchemeTagsSel, SchemeTagsNorm,
     SchemeInfoSel, SchemeInfoNorm, SchemeTileMasterExp, SchemeTileMasterCol,
     SchemeTileStackExp, SchemeTileStackCol, SchemeMonocle, SchemeSpad,
-    SchemeFloatLt }; /* color schemes */
+    SchemeFloatLt, SchemeFloatWin }; /* color schemes */
 enum { NetSupported, NetWMName, NetWMState, NetWMCheck,
        NetWMFullscreen, NetActiveWindow, NetWMWindowType,
        NetWMWindowTypeDialog, NetClientList, NetWMPid, NetLast }; /* EWMH atoms */
@@ -413,6 +413,7 @@ static void incnmaster(const Arg *arg);
 static void keypress(XEvent *e);
 static void killclient(const Arg *arg);
 static int ltcols_match_spad(Client *c);
+static int ltcols_match_floatwin(Client *c);
 static int ltcols_override(Client *c, int ev);
 static void ltcols_map_paint(void (*paint)(Client *, int), Monitor *m, int ev);
 static Client *ltcols_nextvis(Client *c);
@@ -423,6 +424,7 @@ static void ltcols_paint_template(Client *c, int ev, LtColsIdx ac, LtColsIdx in)
 static void ltcols_paint_tile(Client *c, int ev);
 static void ltcols_paint_spad(Client *c, int ev);
 static void ltcols_paint_floatlt(Client *c, int ev);
+static void ltcols_paint_floatwin(Client *c, int ev);
 static void ltcols_try_paint(Client *c, unsigned long col);
 static void manage(Window w, XWindowAttributes *wa);
 static void mappingnotify(XEvent *e);
@@ -560,7 +562,8 @@ static Drw *drw;
 static Monitor *mons, *selmon;
 static Window root, wmcheckwin;
 static LtColsOverride ltcols_overrides[] = {
-    { .match = ltcols_match_spad, .paint = ltcols_paint_spad },
+    { .match = ltcols_match_spad,     .paint = ltcols_paint_spad     },
+    { .match = ltcols_match_floatwin, .paint = ltcols_paint_floatwin },
 };
 static LtColsPair ltcols_map[] = {
     { .arrange = tile,    .paint = ltcols_paint_tile    },
@@ -1732,6 +1735,12 @@ ltcols_match_spad(Client *c)
 }
 
 int
+ltcols_match_floatwin(Client *c)
+{
+    return c && c->isfloating;
+}
+
+int
 ltcols_override(Client *c, int ev)
 {
     int i;
@@ -1823,6 +1832,14 @@ ltcols_paint_floatlt(Client *c, int ev)
 {
     LtColsIdx ac = { SchemeFloatLt, ColFg };
     LtColsIdx in = { SchemeFloatLt, ColBg };
+    ltcols_paint_template(c, ev, ac, in);
+}
+
+void
+ltcols_paint_floatwin(Client *c, int ev)
+{
+    LtColsIdx ac = { SchemeFloatWin, ColFg };
+    LtColsIdx in = { SchemeFloatWin, ColBg };
     ltcols_paint_template(c, ev, ac, in);
 }
 
