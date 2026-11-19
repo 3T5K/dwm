@@ -1,0 +1,57 @@
+diff --git a/config.def.h b/config.def.h
+index 81c3fc0..d8378f9 100644
+--- a/config.def.h
++++ b/config.def.h
+@@ -16,6 +16,7 @@ static const char *colors[][3]      = {
+ 	/*               fg         bg         border   */
+ 	[SchemeNorm] = { col_gray3, col_gray1, col_gray2 },
+ 	[SchemeSel]  = { col_gray4, col_cyan,  col_cyan  },
++    [SchemeTile] = { col_cyan, col_gray2, "#000000" },
+ };
+ 
+ /* tagging */
+diff --git a/dwm.c b/dwm.c
+index 21d233e..fad9bb6 100644
+--- a/dwm.c
++++ b/dwm.c
+@@ -59,7 +59,7 @@
+ 
+ /* enums */
+ enum { CurNormal, CurResize, CurMove, CurLast }; /* cursor */
+-enum { SchemeNorm, SchemeSel }; /* color schemes */
++enum { SchemeNorm, SchemeSel, SchemeTile }; /* color schemes */
+ enum { NetSupported, NetWMName, NetWMState, NetWMCheck,
+        NetWMFullscreen, NetActiveWindow, NetWMWindowType,
+        NetWMWindowTypeDialog, NetClientList, NetLast }; /* EWMH atoms */
+@@ -200,6 +200,7 @@ static Client *ltcols_nextvis(Client *c);
+ static void ltcols_paint(Client *c, int ev);
+ static void ltcols_paint_default(Client *c, int ev);
+ static void ltcols_paint_template(Client *c, int ev, LtColsIdx ac, LtColsIdx in);
++static void ltcols_paint_tile(Client *c, int ev);
+ static void ltcols_try_paint(Client *c, unsigned long col);
+ static void manage(Window w, XWindowAttributes *wa);
+ static void mappingnotify(XEvent *e);
+@@ -1150,6 +1151,14 @@ ltcols_paint_template(Client *c, int ev, LtColsIdx ac, LtColsIdx in)
+     ltcols_try_paint(c, col);
+ }
+ 
++void
++ltcols_paint_tile(Client *c, int ev)
++{
++    LtColsIdx ac = { SchemeTile, ColFg };
++    LtColsIdx in = { SchemeTile, ColBg };
++    ltcols_paint_template(c, ev, ac, in);
++}
++
+ void
+ ltcols_try_paint(Client *c, unsigned long col)
+ {
+@@ -1846,7 +1855,7 @@ tile(Monitor *m)
+ 		}
+ 
+ ltcols_update:
+-    ltcols_map_paint(NULL, m, LtColsEvLayout);
++    ltcols_map_paint(ltcols_paint_tile, m, LtColsEvLayout);
+ }
+ 
+ void
